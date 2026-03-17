@@ -24,9 +24,9 @@ public class SyncRequest {
 
     private LocalDateTime ultimoSyncCliente;
 
-//    @Valid
-//    @Builder.Default
-//    private List<ProdutoSyncRequest> produtos = new ArrayList<>();
+    @Valid
+   @Builder.Default
+    private List<ProdutoSyncRequest> produtos = new ArrayList<>();
 
     @Valid
     @Builder.Default
