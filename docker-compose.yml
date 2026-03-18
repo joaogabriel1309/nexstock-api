@@ -1,36 +1,48 @@
 services:
-  db:
-    image: postgres:latest
-    container_name: postgres_db
-    restart: always
+
+  # ---------------------------------------------------------------
+  # PostgreSQL
+  # ---------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: nexstock-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: nexstockdb
+      POSTGRES_DB: ${DB_NAME:-nexstockdb}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
-    networks:
-      - nexstock-network
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-nexstockdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin_container
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+  # ---------------------------------------------------------------
+  # NexStock API
+  # ---------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexstock-api
+    restart: unless-stopped
     ports:
-      - "8080:80"
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-nexstockdb}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      SERVER_PORT: 8080
     depends_on:
-      - db
-    networks:
-      - nexstock-network
-
-networks:
-  nexstock-network:
-    driver: bridge
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
