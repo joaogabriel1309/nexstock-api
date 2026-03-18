@@ -39,3 +39,7 @@ springdoc:
     tags-sorter: alpha
   api-docs:
     path: /v3/api-docs
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiracao-ms: ${JWT_EXPIRACAO_MS:86400000}
