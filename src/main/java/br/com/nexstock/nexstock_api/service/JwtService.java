@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
@@ -73,7 +74,6 @@ public class JwtService {
     }
 
     private SecretKey getChave() {
-        byte[] bytes = Base64.getDecoder().decode(secret);
-        return Keys.hmacShaKeyFor(bytes);
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }
