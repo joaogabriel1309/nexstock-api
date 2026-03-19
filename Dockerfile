@@ -22,4 +22,4 @@ USER nexstock
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
