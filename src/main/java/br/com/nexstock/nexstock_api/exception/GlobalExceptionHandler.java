@@ -2,6 +2,7 @@ package br.com.nexstock.nexstock_api.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -91,6 +92,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatus.BAD_REQUEST, "Dados inválidos",
             "Um ou mais campos falharam na validação", request, detalhes
         ));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, String> handleBadCredentials(BadCredentialsException ex) {
+        return Map.of("erro", "Email ou senha inválidos");
     }
 
     @ExceptionHandler(Exception.class)

@@ -10,10 +10,12 @@ import br.com.nexstock.nexstock_api.exception.RegraDeNegocioException;
 import br.com.nexstock.nexstock_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 @Service
 @RequiredArgsConstructor
