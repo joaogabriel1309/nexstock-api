@@ -10,9 +10,9 @@ import java.util.UUID;
 @Table(
         name = "empresa",
         indexes = {
-                @Index(name = "idx_contrato_empresa_id", columnList = "contrato_id"),
-                @Index(name = "idx_nome",     columnList = "nome"),
-                @Index(name = "idx_cpf_cnpj",   columnList = "cpf_cnpj")
+                @Index(name = "idx_empresa_contrato_id", columnList = "contrato_id"),
+                @Index(name = "idx_empresa_nome",        columnList = "nome"),
+                @Index(name = "idx_empresa_cpf_cnpj",    columnList = "cpf_cnpj")
         }
 )
 @Getter
@@ -27,18 +27,18 @@ public class Empresa {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "contrato_id", nullable = false)
+    private Contrato contrato;
+
     @Column(name = "nome", nullable = false, length = 200)
     private String nome;
 
     @Column(name = "razao_social", nullable = false, length = 200)
     private String razaoSocial;
 
-    @Column(name = "cpf_cnpj", nullable = false)
+    @Column(name = "cpf_cnpj", nullable = false, length = 18)
     private String cpfCnpj;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "contrato_id", nullable = false)
-    private Contrato contrato;
 
     @Column(name = "email", length = 255)
     private String email;
@@ -56,5 +56,13 @@ public class Empresa {
     @PrePersist
     public void prePersist() {
         this.criadoEm = LocalDateTime.now();
+    }
+
+    public void desativar() {
+        this.ativo = false;
+    }
+
+    public void reativar() {
+        this.ativo = true;
     }
 }
