@@ -22,7 +22,6 @@ public class DispositivoResponse {
     public static DispositivoResponse from(Dispositivo dispositivo) {
         return DispositivoResponse.builder()
                 .id(dispositivo.getId())
-                .contratoId(dispositivo.getContrato().getId())
                 .nome(dispositivo.getNome())
                 .sistema(dispositivo.getSistema())
                 .ultimoSync(dispositivo.getUltimoSync())

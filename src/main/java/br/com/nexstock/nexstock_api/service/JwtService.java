@@ -30,7 +30,6 @@ public class JwtService {
         return Jwts.builder()
                 .subject(usuario.getEmail())
                 .claim("usuarioId",  usuario.getId().toString())
-                .claim("contratoId", usuario.getContrato().getId().toString())
                 .claim("role",       usuario.getRole().name())
                 .issuedAt(agora)
                 .expiration(expiracao)
@@ -42,8 +41,8 @@ public class JwtService {
         return getClaims(token).getSubject();
     }
 
-    public UUID extrairContratoId(String token) {
-        return UUID.fromString(getClaims(token).get("contratoId", String.class));
+    public String extrairSenha(String token) {
+        return getClaims(token).getSubject();
     }
 
     public UUID extrairUsuarioId(String token) {

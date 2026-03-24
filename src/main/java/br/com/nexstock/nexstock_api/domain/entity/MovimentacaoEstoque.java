@@ -3,6 +3,8 @@ package br.com.nexstock.nexstock_api.domain.entity;
 import br.com.nexstock.nexstock_api.domain.enums.TipoMovimentacao;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,14 +12,17 @@ import java.util.UUID;
 
 @Entity
 @Table(
-    name = "movimentacao_estoque",
-    indexes = {
-        @Index(name = "idx_mov_contrato_id",    columnList = "contrato_id"),
-        @Index(name = "idx_mov_produto_id",     columnList = "produto_id"),
-        @Index(name = "idx_mov_criado_em",      columnList = "contrato_id, criado_em"),
-        @Index(name = "idx_mov_dispositivo_id", columnList = "dispositivo_id")
-    }
+        name = "movimentacao_estoque",
+        indexes = {
+                @Index(name = "idx_mov_empresa_id",     columnList = "empresa_id"),
+                @Index(name = "idx_mov_produto_id",     columnList = "produto_id"),
+                @Index(name = "idx_mov_criado_em",      columnList = "empresa_id, criado_em"),
+                @Index(name = "idx_mov_dispositivo_id", columnList = "dispositivo_id"),
+                @Index(name = "idx_mov_atualizado",    columnList = "atualizado_em")
+        }
 )
+@SQLDelete(sql = "UPDATE movimentacao_estoque SET deletado_em = now(), atualizado_em = now() WHERE id = ?")
+@SQLRestriction("deletado_em IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,8 +36,8 @@ public class MovimentacaoEstoque {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "contrato_id", nullable = false)
-    private Contrato contrato;
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "produto_id", nullable = false)
@@ -45,10 +50,28 @@ public class MovimentacaoEstoque {
     @Column(name = "quantidade", nullable = false, precision = 15, scale = 4)
     private BigDecimal quantidade;
 
-    @Column(name = "criado_em", nullable = false)
-    private LocalDateTime criadoEm;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dispositivo_id")
     private Dispositivo dispositivo;
+
+    @Column(name = "criado_em", nullable = false, updatable = false)
+    private LocalDateTime criadoEm;
+
+    @Column(name = "atualizado_em", nullable = false)
+    private LocalDateTime atualizadoEm;
+
+    @Column(name = "deletado_em")
+    private LocalDateTime deletadoEm;
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime agora = LocalDateTime.now();
+        this.criadoEm = agora;
+        this.atualizadoEm = agora;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.atualizadoEm = LocalDateTime.now();
+    }
 }

@@ -35,7 +35,6 @@ public class DispositivoService {
         }
 
         Dispositivo dispositivo = Dispositivo.builder()
-                .contrato(contrato)
                 .nome(request.getNome())
                 .sistema(request.getSistema())
                 .build();

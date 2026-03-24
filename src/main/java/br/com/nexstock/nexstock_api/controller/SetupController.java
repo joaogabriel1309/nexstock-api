@@ -42,14 +42,12 @@ public class SetupController {
                 .build());
 
         Contrato contrato = contratoRepository.save(Contrato.builder()
-                .cliente(cliente)
                 .plano(plano)
                 .dataInicio(LocalDate.now())
                 .dataFim(LocalDate.now().plusDays(plano.getDuracaoDias()))
                 .build());
 
         usuarioRepository.save(Usuario.builder()
-                .contrato(contrato)
                 .nome(request.usuarioNome())
                 .email(request.usuarioEmail())
                 .senha(passwordEncoder.encode(request.usuarioSenha()))

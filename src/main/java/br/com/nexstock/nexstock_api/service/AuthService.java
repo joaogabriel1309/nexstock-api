@@ -30,7 +30,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository
-                .findByEmailAndContratoId(request.getEmail(), request.getContratoId())
+                .findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Email ou senha inválidos"));
 
         if (!usuario.isEnabled()) {
@@ -42,13 +42,12 @@ public class AuthService {
         }
 
         String token = jwtService.gerarToken(usuario);
-        log.info("Login realizado — usuário: {} | contrato: {}", usuario.getEmail(), usuario.getContrato().getId());
+        log.info("Login realizado — usuário: {}", usuario.getEmail());
 
         return LoginResponse.builder()
                 .token(token)
                 .tipo("Bearer")
                 .usuarioId(usuario.getId())
-                .contratoId(usuario.getContrato().getId())
                 .nome(usuario.getNome())
                 .email(usuario.getEmail())
                 .role(usuario.getRole().name())
@@ -60,14 +59,13 @@ public class AuthService {
     public LoginResponse registrar(RegistroUsuarioRequest request) {
         Contrato contrato = contratoService.buscarEntidadeVigente(request.getContratoId());
 
-        if (usuarioRepository.existsByEmailAndContratoId(request.getEmail(), contrato.getId())) {
+        if (usuarioRepository.existsByEmail(request.getEmail())) {
             throw new RegraDeNegocioException(
                     "Email '" + request.getEmail() + "' já está em uso neste contrato."
             );
         }
 
         Usuario usuario = Usuario.builder()
-                .contrato(contrato)
                 .nome(request.getNome())
                 .email(request.getEmail())
                 .senha(passwordEncoder.encode(request.getSenha()))

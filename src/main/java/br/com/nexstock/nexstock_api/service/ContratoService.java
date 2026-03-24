@@ -45,7 +45,6 @@ public class ContratoService {
         LocalDate fim    = inicio.plusDays(plano.getDuracaoDias());
 
         Contrato contrato = Contrato.builder()
-                .cliente(cliente)
                 .plano(plano)
                 .dataInicio(inicio)
                 .dataFim(fim)
@@ -71,7 +70,6 @@ public class ContratoService {
         LocalDate fim    = inicio.plusDays(atual.getPlano().getDuracaoDias());
 
         Contrato novo = Contrato.builder()
-                .cliente(atual.getCliente())
                 .plano(atual.getPlano())
                 .dataInicio(inicio)
                 .dataFim(fim)

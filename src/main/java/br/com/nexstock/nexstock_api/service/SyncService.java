@@ -68,7 +68,6 @@ public class SyncService {
         dispositivoRepository.save(dispositivo);
 
         SyncLog syncLog = SyncLog.builder()
-                .contrato(contrato)
                 .dispositivo(dispositivo)
                 .dataSync(inicioSync)
                 .registrosEnviados(request.getProdutos().size() + request.getMovimentacoes().size())
@@ -129,7 +128,6 @@ public class SyncService {
                     .atualizadoEm(dto.getAtualizadoEm())
                     .versao(dto.getVersao() != null ? dto.getVersao() + 1 : 1L)
                     .dispositivoUltimaAlteracao(dispositivo)
-                    .deletado(Boolean.TRUE.equals(dto.getDeletado()))
                     .build();
             produtoRepository.save(novo);
             return;
@@ -140,10 +138,7 @@ public class SyncService {
 
         if (clienteTs.isAfter(servidorTs)) {
             long versaoAnterior = existente.getVersao();
-            existente.aplicarDadosSync(
-                dto.getNome(), dto.getCodigoBarras(), dto.getEstoque(),
-                dto.getAtualizadoEm(), dto.getDeletado(), dispositivo
-            );
+
             produtoRepository.save(existente);
 
             if (versaoAnterior != dto.getVersao()) {
@@ -192,7 +187,6 @@ public class SyncService {
 
             novas.add(MovimentacaoEstoque.builder()
                     .id(dto.getId())
-                    .contrato(contrato)
                     .produto(produto)
                     .tipo(dto.getTipo())
                     .quantidade(dto.getQuantidade())

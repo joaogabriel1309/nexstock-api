@@ -56,7 +56,6 @@ public class ProdutoService {
         produto.setNome(request.getNome());
         produto.setCodigoBarras(request.getCodigoBarras());
         produto.setEstoque(request.getEstoque());
-        produto.registrarAtualizacao(dispositivo);
 
         return ProdutoResponse.from(produtoRepository.save(produto));
     }
@@ -87,7 +86,6 @@ public class ProdutoService {
         Produto     produto     = buscarEntidadeAtiva(contratoId, id);
         Dispositivo dispositivo = dispositivoService.buscarEntidade(contratoId, dispositivoId);
 
-        produto.marcarComoDeletado(dispositivo);
         produtoRepository.save(produto);
         log.info("Produto {} marcado como deletado (versão {})", id, produto.getVersao());
     }
@@ -97,9 +95,6 @@ public class ProdutoService {
         Produto produto = produtoRepository.findByIdAndContratoId(id, contratoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto", id));
 
-        if (Boolean.TRUE.equals(produto.getDeletado())) {
-            throw new RecursoNaoEncontradoException("Produto", id);
-        }
         return produto;
     }
 

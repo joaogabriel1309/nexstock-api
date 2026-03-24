@@ -2,6 +2,8 @@ package br.com.nexstock.nexstock_api.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -10,11 +12,14 @@ import java.util.UUID;
 @Table(
         name = "empresa",
         indexes = {
-                @Index(name = "idx_empresa_contrato_id", columnList = "contrato_id"),
-                @Index(name = "idx_empresa_nome",        columnList = "nome"),
-                @Index(name = "idx_empresa_cpf_cnpj",    columnList = "cpf_cnpj")
+                @Index(name = "idx_empresa_contrato_id",  columnList = "contrato_id"),
+                @Index(name = "idx_empresa_nome",         columnList = "nome"),
+                @Index(name = "idx_empresa_cpf_cnpj",     columnList = "cpf_cnpj"),
+                @Index(name = "idx_empresa_atualizado",   columnList = "atualizado_em")
         }
 )
+@SQLDelete(sql = "UPDATE empresa SET deletado_em = now(), atualizado_em = now() WHERE id = ?")
+@SQLRestriction("deletado_em IS NULL")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -37,7 +42,7 @@ public class Empresa {
     @Column(name = "razao_social", nullable = false, length = 200)
     private String razaoSocial;
 
-    @Column(name = "cpf_cnpj", nullable = false, length = 18)
+    @Column(name = "cpf_cnpj", nullable = false, length = 18, unique = true)
     private String cpfCnpj;
 
     @Column(name = "email", length = 255)
@@ -53,16 +58,30 @@ public class Empresa {
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
+    @Column(name = "atualizado_em", nullable = false)
+    private LocalDateTime atualizadoEm;
+
+    @Column(name = "deletado_em")
+    private LocalDateTime deletadoEm;
+
     @PrePersist
     public void prePersist() {
         this.criadoEm = LocalDateTime.now();
+        this.atualizadoEm = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.atualizadoEm = LocalDateTime.now();
     }
 
     public void desativar() {
         this.ativo = false;
+        this.atualizadoEm = LocalDateTime.now();
     }
 
     public void reativar() {
         this.ativo = true;
+        this.atualizadoEm = LocalDateTime.now();
     }
 }

@@ -38,7 +38,6 @@ public class ProdutoResponse {
                         ? produto.getDispositivoUltimaAlteracao().getId()
                         : null
                 )
-                .deletado(produto.getDeletado())
                 .build();
     }
 }
