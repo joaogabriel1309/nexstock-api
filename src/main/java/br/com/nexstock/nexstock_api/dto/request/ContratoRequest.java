@@ -12,8 +12,8 @@ import java.util.UUID;
 @Builder
 public class ContratoRequest {
 
-    @NotNull(message = "ID do cliente é obrigatório")
-    private UUID clienteId;
+    @NotNull(message = "ID da empresa é obrigatório")
+    private UUID empresaId;
 
     @NotNull(message = "ID do plano é obrigatório")
     private UUID planoId;

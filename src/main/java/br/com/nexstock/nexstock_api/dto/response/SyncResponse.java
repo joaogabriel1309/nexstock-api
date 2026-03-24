@@ -28,4 +28,6 @@ public class SyncResponse {
     private List<ConflictInfo> conflitos = new ArrayList<>();
 
     private String status;
+
+    private UUID empresaId;
 }

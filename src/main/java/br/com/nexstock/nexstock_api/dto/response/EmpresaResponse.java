@@ -26,7 +26,7 @@ public class EmpresaResponse {
     public static EmpresaResponse from(Empresa empresa) {
         return EmpresaResponse.builder()
                 .id(empresa.getId())
-                .contratoId(empresa.getContrato().getId())
+                .contratoId(empresa.getContrato() != null ? empresa.getContrato().getId() : null)
                 .nome(empresa.getNome())
                 .razaoSocial(empresa.getRazaoSocial())
                 .cpfCnpj(empresa.getCpfCnpj())

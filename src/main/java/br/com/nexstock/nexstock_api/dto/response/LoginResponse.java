@@ -14,7 +14,7 @@ public class LoginResponse {
     private String token;
     private String tipo;
     private UUID usuarioId;
-    private UUID contratoId;
+    private UUID empresaId;
     private String nome;
     private String email;
     private String role;

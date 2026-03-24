@@ -14,7 +14,7 @@ import java.util.UUID;
 public class DispositivoResponse {
 
     private UUID id;
-    private UUID contratoId;
+    private UUID empresaId;
     private String nome;
     private String sistema;
     private LocalDateTime ultimoSync;
@@ -22,6 +22,7 @@ public class DispositivoResponse {
     public static DispositivoResponse from(Dispositivo dispositivo) {
         return DispositivoResponse.builder()
                 .id(dispositivo.getId())
+                .empresaId(dispositivo.getEmpresa().getId())
                 .nome(dispositivo.getNome())
                 .sistema(dispositivo.getSistema())
                 .ultimoSync(dispositivo.getUltimoSync())

@@ -13,20 +13,20 @@ import java.util.UUID;
 @Builder
 public class ProdutoRequest {
 
-    @NotNull(message = "ID do contrato é obrigatório")
-    private UUID contratoId;
+    @NotNull(message = "O ID da empresa é obrigatório")
+    private UUID empresaId;
 
-    @NotNull(message = "ID do dispositivo é obrigatório")
+    @NotNull(message = "O ID do dispositivo é obrigatório")
     private UUID dispositivoId;
 
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(max = 255)
+    @NotBlank(message = "O nome do produto é obrigatório")
+    @Size(max = 255, message = "O nome deve ter no máximo 255 caracteres")
     private String nome;
 
-    @Size(max = 100)
+    @Size(max = 100, message = "O código de barras deve ter no máximo 100 caracteres")
     private String codigoBarras;
 
-    @NotNull(message = "Estoque é obrigatório")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Estoque não pode ser negativo")
+    @NotNull(message = "O estoque inicial é obrigatório")
+    @DecimalMin(value = "0.0", inclusive = true, message = "O estoque não pode ser negativo")
     private BigDecimal estoque;
 }
