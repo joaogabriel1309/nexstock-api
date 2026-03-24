@@ -25,7 +25,7 @@ public class SyncResponse {
     private Integer movimentacoesRegistradas;
 
     @Builder.Default
-    private List<ConflictInfo> conflitos = new ArrayList<>();
+    private List<ConflictInfoResponse> conflitos = new ArrayList<>();
 
     private String status;
 
