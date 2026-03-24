@@ -13,14 +13,18 @@ import java.util.UUID;
 @Repository
 public interface MovimentacaoEstoqueRepository extends JpaRepository<MovimentacaoEstoque, UUID> {
 
-    List<MovimentacaoEstoque> findAllByContratoIdAndProdutoIdOrderByCriadoEmDesc(
-        UUID contratoId,
-        UUID produtoId
+    List<MovimentacaoEstoque> findAllByEmpresaIdAndProdutoIdOrderByCriadoEmDesc(
+            UUID empresaId,
+            UUID produtoId
     );
 
-    @Query("SELECT m.id FROM MovimentacaoEstoque m WHERE m.id IN :ids AND m.contrato.id = :contratoId")
+    @Query("""
+        SELECT m.id FROM MovimentacaoEstoque m
+        WHERE m.id IN :ids
+         AND m.empresa.id = :empresaId
+    """)
     Set<UUID> findIdsExistentes(
-        @Param("ids") List<UUID> ids,
-        @Param("contratoId") UUID contratoId
+            @Param("ids") List<UUID> ids,
+            @Param("empresaId") UUID empresaId
     );
 }

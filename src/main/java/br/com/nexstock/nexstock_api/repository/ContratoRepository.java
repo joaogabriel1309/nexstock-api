@@ -15,14 +15,22 @@ import java.util.UUID;
 @Repository
 public interface ContratoRepository extends JpaRepository<Contrato, UUID> {
 
-    Optional<Contrato> findByClienteIdAndStatus(UUID clienteId, StatusContrato status);
+    Optional<Contrato> findByPlanoIdAndStatus(UUID planoId, StatusContrato status);
 
-    List<Contrato> findAllByClienteIdOrderByCriadoEmDesc(UUID clienteId);
+    List<Contrato> findAllByPlanoIdOrderByCriadoEmDesc(UUID planoId);
 
     @Query("""
         SELECT c FROM Contrato c
         WHERE c.status = 'ATIVO'
         AND c.dataFim < :hoje
     """)
+
     List<Contrato> findContratosVencidos(@Param("hoje") LocalDate hoje);
+
+    @Query("""
+        SELECT e.contrato FROM Empresa e
+        WHERE e.id = :empresaId
+    """)
+
+    Optional<Contrato> findContratoByEmpresaId(@Param("empresaId") UUID empresaId);
 }

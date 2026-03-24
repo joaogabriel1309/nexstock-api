@@ -14,30 +14,30 @@ import java.util.UUID;
 @Repository
 public interface ProdutoRepository extends JpaRepository<Produto, UUID> {
 
-    List<Produto> findAllByContratoIdAndDeletadoFalse(UUID contratoId);
+    List<Produto> findAllByEmpresaIdAndDeletadoEmIsNull(UUID empresaId);
 
-    Optional<Produto> findByIdAndContratoId(UUID id, UUID contratoId);
+    Optional<Produto> findByIdAndEmpresaId(UUID id, UUID empresaId);
 
     @Query("""
         SELECT p FROM Produto p
-        WHERE p.contrato.id = :contratoId
+        WHERE p.empresa.id = :empresaId
         AND p.atualizadoEm > :desde
         ORDER BY p.atualizadoEm ASC
     """)
     List<Produto> findAllParaSync(
-            @Param("contratoId") UUID contratoId,
+            @Param("empresaId") UUID empresaId,
             @Param("desde") LocalDateTime desde
     );
 
     @Query("""
         SELECT COUNT(p) > 0 FROM Produto p
-        WHERE p.contrato.id = :contratoId
+        WHERE p.empresa.id = :empresaId
         AND p.codigoBarras = :codigoBarras
         AND p.id <> :idExcluir
-        AND p.deletado = false
+        AND p.deletadoEm IS NULL
     """)
     boolean existsCodigoBarrasEmOutroProduto(
-            @Param("contratoId") UUID contratoId,
+            @Param("empresaId") UUID empresaId,
             @Param("codigoBarras") String codigoBarras,
             @Param("idExcluir") UUID idExcluir
     );

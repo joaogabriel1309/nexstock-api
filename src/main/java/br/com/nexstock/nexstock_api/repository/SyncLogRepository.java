@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface SyncLogRepository extends JpaRepository<SyncLog, UUID> {
 
-    Page<SyncLog> findAllByContratoIdOrderByDataSyncDesc(UUID contratoId, Pageable pageable);
+    Page<SyncLog> findAllByEmpresaIdOrderByDataSyncDesc(UUID empresaId, Pageable pageable);
 
     Page<SyncLog> findAllByDispositivoIdOrderByDataSyncDesc(UUID dispositivoId, Pageable pageable);
 }

@@ -1,13 +1,11 @@
 package br.com.nexstock.nexstock_api.controller;
 
 import br.com.nexstock.nexstock_api.IntegrationTestBase;
-import br.com.nexstock.nexstock_api.domain.entity.Cliente;
 import br.com.nexstock.nexstock_api.domain.entity.Contrato;
 import br.com.nexstock.nexstock_api.domain.entity.Plano;
 import br.com.nexstock.nexstock_api.domain.entity.Usuario;
 import br.com.nexstock.nexstock_api.domain.enums.Role;
 import br.com.nexstock.nexstock_api.domain.enums.StatusContrato;
-import br.com.nexstock.nexstock_api.repository.ClienteRepository;
 import br.com.nexstock.nexstock_api.repository.ContratoRepository;
 import br.com.nexstock.nexstock_api.repository.PlanoRepository;
 import br.com.nexstock.nexstock_api.repository.UsuarioRepository;

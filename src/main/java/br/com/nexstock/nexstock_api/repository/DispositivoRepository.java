@@ -11,9 +11,9 @@ import java.util.UUID;
 @Repository
 public interface DispositivoRepository extends JpaRepository<Dispositivo, UUID> {
 
-    List<Dispositivo> findAllByContratoId(UUID contratoId);
+    List<Dispositivo> findAllByEmpresaId(UUID empresaId);
 
-    Optional<Dispositivo> findByIdAndContratoId(UUID id, UUID contratoId);
+    Optional<Dispositivo> findByIdAndEmpresaId(UUID id, UUID empresaId);
 
-    long countByContratoId(UUID contratoId);
+    long countByEmpresaId(UUID empresaId);
 }
