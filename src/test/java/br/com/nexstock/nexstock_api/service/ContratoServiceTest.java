@@ -1,6 +1,5 @@
 package br.com.nexstock.nexstock_api.service;
 
-import br.com.nexstock.nexstock_api.domain.entity.Cliente;
 import br.com.nexstock.nexstock_api.domain.entity.Contrato;
 import br.com.nexstock.nexstock_api.domain.entity.Plano;
 import br.com.nexstock.nexstock_api.domain.enums.StatusContrato;
