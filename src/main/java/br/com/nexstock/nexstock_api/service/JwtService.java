@@ -3,13 +3,13 @@ package br.com.nexstock.nexstock_api.service;
 import br.com.nexstock.nexstock_api.domain.entity.Usuario;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
 
@@ -20,6 +20,7 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secret;
 
+    @Getter
     @Value("${jwt.expiracao-ms:86400000}")
     private long expiracaoMs;
 
@@ -30,6 +31,7 @@ public class JwtService {
         return Jwts.builder()
                 .subject(usuario.getEmail())
                 .claim("usuarioId",  usuario.getId().toString())
+                .claim("empresaId",  usuario.getEmpresa().getId().toString())
                 .claim("role",       usuario.getRole().name())
                 .issuedAt(agora)
                 .expiration(expiracao)
@@ -37,11 +39,12 @@ public class JwtService {
                 .compact();
     }
 
-    public String extrairEmail(String token) {
-        return getClaims(token).getSubject();
+    public UUID extrairEmpresaId(String token) {
+        String idStr = getClaims(token).get("empresaId", String.class);
+        return UUID.fromString(idStr);
     }
 
-    public String extrairSenha(String token) {
+    public String extrairEmail(String token) {
         return getClaims(token).getSubject();
     }
 
@@ -59,11 +62,6 @@ public class JwtService {
         }
     }
 
-    public long getExpiracaoMs() {
-        return expiracaoMs;
-    }
-
-
     private Claims getClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getChave())
@@ -73,6 +71,6 @@ public class JwtService {
     }
 
     private SecretKey getChave() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+       return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }
