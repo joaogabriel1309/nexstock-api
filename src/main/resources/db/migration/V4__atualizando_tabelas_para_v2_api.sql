@@ -37,7 +37,7 @@ CREATE TABLE contrato (
 
 CREATE TABLE empresa (
                          id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-                         contrato_id   UUID         NOT NULL REFERENCES contrato(id),
+                         contrato_id   UUID         NULL REFERENCES contrato(id),
                          nome          VARCHAR(200) NOT NULL,
                          razao_social  VARCHAR(200) NOT NULL,
                          cpf_cnpj      VARCHAR(18)  NOT NULL UNIQUE,

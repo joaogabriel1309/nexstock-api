@@ -14,11 +14,21 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/admin/contratos")
+@RequestMapping("/api/contratos")
 @RequiredArgsConstructor
 public class ContratoController {
 
     private final ContratoService contratoService;
+
+    @PostMapping
+    public ResponseEntity<ContratoResponse> criar(@RequestBody @Valid ContratoRequest request) {
+        var novoContrato = contratoService.criar(request);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(novoContrato.getId())
+                .toUri();
+        return ResponseEntity.created(uri).body(ContratoResponse.from(novoContrato));
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ContratoResponse> buscarPorId(@PathVariable UUID id) {

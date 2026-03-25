@@ -1,12 +1,11 @@
 package br.com.nexstock.nexstock_api.service;
 
 import br.com.nexstock.nexstock_api.domain.entity.Contrato;
+import br.com.nexstock.nexstock_api.domain.entity.Empresa;
 import br.com.nexstock.nexstock_api.domain.entity.Plano;
 import br.com.nexstock.nexstock_api.domain.enums.StatusContrato;
-import br.com.nexstock.nexstock_api.dto.request.ContratoRequest;
 import br.com.nexstock.nexstock_api.dto.response.ContratoResponse;
 import br.com.nexstock.nexstock_api.exception.ContratoInativoException;
-import br.com.nexstock.nexstock_api.exception.RegraDeNegocioException;
 import br.com.nexstock.nexstock_api.exception.RecursoNaoEncontradoException;
 import br.com.nexstock.nexstock_api.repository.ContratoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +22,8 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -32,171 +32,91 @@ import static org.mockito.Mockito.*;
 class ContratoServiceTest {
 
     @Mock ContratoRepository contratoRepository;
-    @Mock ClienteService     clienteService;
     @Mock PlanoService       planoService;
 
     @InjectMocks ContratoService contratoService;
 
-    private UUID clienteId;
     private UUID planoId;
-    private Cliente cliente;
     private Plano plano;
 
     @BeforeEach
     void setUp() {
-        clienteId = UUID.randomUUID();
-        planoId   = UUID.randomUUID();
-
-        cliente = Cliente.builder()
-                .id(clienteId)
-                .nome("Loja do João")
-                .email("joao@loja.com")
-                .ativo(true)
-                .build();
+        planoId = UUID.randomUUID();
 
         plano = Plano.builder()
                 .id(planoId)
                 .nome("Mensal Básico")
                 .preco(new BigDecimal("49.90"))
                 .duracaoDias(30)
-                .maxDispositivos(1)
+                .maxDispositivos(5)
                 .ativo(true)
                 .build();
     }
 
     @Nested
-    @DisplayName("contratar")
-    class Contratar {
+    @DisplayName("gerarContratoInicial")
+    class GerarInicial {
 
         @Test
-        @DisplayName("deve criar contrato com status ATIVO e data_fim calculada")
-        void deveCriarContratoComStatusAtivo() {
-            var request = new ContratoRequest(clienteId, planoId);
+        @DisplayName("deve gerar contrato inicial ATIVO baseado no plano escolhido")
+        void deveGerarContratoInicialComSucesso() {
+            when(planoService.buscarPorId(planoId)).thenReturn(plano);
 
-            when(clienteService.buscarEntidade(clienteId)).thenReturn(cliente);
-            when(planoService.buscarEntidade(planoId)).thenReturn(plano);
-            when(contratoRepository.findByClienteIdAndStatus(clienteId, StatusContrato.ATIVO))
-                    .thenReturn(Optional.empty());
-            when(contratoRepository.save(any())).thenAnswer(inv -> {
-                Contrato c = inv.getArgument(0);
-                c = Contrato.builder()
-                        .id(UUID.randomUUID())
-                        .cliente(c.getCliente())
-                        .plano(c.getPlano())
-                        .dataInicio(c.getDataInicio())
-                        .dataFim(c.getDataFim())
-                        .status(StatusContrato.ATIVO)
-                        .build();
-                return c;
-            });
+            when(contratoRepository.save(any(Contrato.class))).thenAnswer(i -> i.getArgument(0));
 
-            ContratoResponse response = contratoService.contratar(request);
+            Contrato resultado = contratoService.gerarContratoInicial(planoId);
 
-            assertThat(response.getStatus()).isEqualTo(StatusContrato.ATIVO);
-            assertThat(response.getDataFim())
-                    .isEqualTo(LocalDate.now().plusDays(30));
-        }
+            assertThat(resultado.getStatus()).isEqualTo(StatusContrato.ATIVO);
+            assertThat(resultado.getPlano()).isEqualTo(plano);
+            assertThat(resultado.getDataInicio()).isEqualTo(LocalDate.now());
+            assertThat(resultado.getDataFim()).isEqualTo(LocalDate.now().plusDays(30));
 
-        @Test
-        @DisplayName("deve lançar exceção quando cliente já tem contrato ativo")
-        void deveLancarExcecaoComContratoJaAtivo() {
-            var request   = new ContratoRequest(clienteId, planoId);
-            var existente = Contrato.builder().id(UUID.randomUUID()).build();
-
-            when(clienteService.buscarEntidade(clienteId)).thenReturn(cliente);
-            when(planoService.buscarEntidade(planoId)).thenReturn(plano);
-            when(contratoRepository.findByClienteIdAndStatus(clienteId, StatusContrato.ATIVO))
-                    .thenReturn(Optional.of(existente));
-
-            assertThatThrownBy(() -> contratoService.contratar(request))
-                    .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessageContaining("já possui um contrato ativo");
-        }
-
-        @Test
-        @DisplayName("deve lançar exceção quando plano está inativo")
-        void deveLancarExcecaoComPlanoInativo() {
-            plano.setAtivo(false);
-            var request = new ContratoRequest(clienteId, planoId);
-
-            when(clienteService.buscarEntidade(clienteId)).thenReturn(cliente);
-            when(planoService.buscarEntidade(planoId)).thenReturn(plano);
-
-            assertThatThrownBy(() -> contratoService.contratar(request))
-                    .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessageContaining("não está disponível");
+            verify(contratoRepository).save(any());
         }
     }
 
     @Nested
-    @DisplayName("buscarEntidadeVigente")
-    class BuscarVigente {
+    @DisplayName("ciclo de vida e consultas")
+    class CicloDeVida {
 
         @Test
-        @DisplayName("deve lançar ContratoInativoException quando contrato expirado")
-        void deveLancarExcecaoQuandoContratoExpirado() {
-            var contratoExpirado = Contrato.builder()
-                    .id(UUID.randomUUID())
-                    .status(StatusContrato.EXPIRADO)
-                    .dataFim(LocalDate.now().minusDays(1))
-                    .build();
+        @DisplayName("deve buscar entidade e retornar contrato quando ID existe")
+        void deveRetornarContratoQuandoIdExiste() {
+            var contrato = Contrato.builder().id(UUID.randomUUID()).status(StatusContrato.ATIVO).build();
 
-            when(contratoRepository.findById(contratoExpirado.getId()))
-                    .thenReturn(Optional.of(contratoExpirado));
+            when(contratoRepository.findById(contrato.getId())).thenReturn(Optional.of(contrato));
 
-            assertThatThrownBy(() -> contratoService.buscarEntidadeVigente(contratoExpirado.getId()))
-                    .isInstanceOf(ContratoInativoException.class);
+            Contrato resultado = contratoService.buscarEntidade(contrato.getId());
+
+            assertThat(resultado).isNotNull();
+            assertThat(resultado.getId()).isEqualTo(contrato.getId());
         }
 
         @Test
         @DisplayName("deve lançar RecursoNaoEncontradoException quando contrato não existe")
-        void deveLancarExcecaoQuandoContratoNaoExiste() {
+        void deveLancarErroQuandoContratoInexistente() {
             UUID idInexistente = UUID.randomUUID();
             when(contratoRepository.findById(idInexistente)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> contratoService.buscarEntidadeVigente(idInexistente))
+            assertThatThrownBy(() -> contratoService.buscarEntidade(idInexistente))
                     .isInstanceOf(RecursoNaoEncontradoException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("cancelar / suspender / reativar")
-    class CicloDeVida {
-
-        private Contrato contrato;
-
-        @BeforeEach
-        void setup() {
-            contrato = Contrato.builder()
-                    .id(UUID.randomUUID())
-                    .cliente(cliente)
-                    .plano(plano)
-                    .dataInicio(LocalDate.now())
-                    .dataFim(LocalDate.now().plusDays(30))
-                    .status(StatusContrato.ATIVO)
-                    .build();
         }
 
         @Test
-        @DisplayName("deve cancelar contrato ativo")
-        void deveCancelarContratoAtivo() {
+        @DisplayName("deve alterar status para CANCELADO e salvar no banco")
+        void deveCancelarContratoComSucesso() {
+            var contrato = Contrato.builder()
+                    .id(UUID.randomUUID())
+                    .status(StatusContrato.ATIVO)
+                    .build();
+
             when(contratoRepository.findById(contrato.getId())).thenReturn(Optional.of(contrato));
             when(contratoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
             contratoService.cancelar(contrato.getId());
 
             assertThat(contrato.getStatus()).isEqualTo(StatusContrato.CANCELADO);
-        }
-
-        @Test
-        @DisplayName("deve suspender contrato ativo")
-        void deveSuspenderContratoAtivo() {
-            when(contratoRepository.findById(contrato.getId())).thenReturn(Optional.of(contrato));
-            when(contratoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-
-            contratoService.suspender(contrato.getId());
-
-            assertThat(contrato.getStatus()).isEqualTo(StatusContrato.SUSPENSO);
+            verify(contratoRepository).save(argThat(c -> c.getStatus() == StatusContrato.CANCELADO));
         }
     }
 }

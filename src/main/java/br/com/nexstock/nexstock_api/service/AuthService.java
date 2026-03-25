@@ -10,6 +10,7 @@ import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
 import br.com.nexstock.nexstock_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class AuthService {
                 .orElseThrow(() -> new BadCredentialsException("Email ou senha inválidos"));
 
         if (!usuario.isEnabled() || !usuario.getEmpresa().getAtivo()) {
-            throw new BadCredentialsException("Acesso negado: Usuário ou Empresa inativos");
+            throw new BadCredentialsException("Usuário ou Empresa inativos");
         }
 
         if (!passwordEncoder.matches(request.getSenha(), usuario.getSenha())) {
@@ -57,6 +58,12 @@ public class AuthService {
 
     @Transactional
     public LoginResponse registrar(RegistroUsuarioRequest request) {
+        Usuario adminLogado = getUsuarioAutenticado();
+
+        if (!adminLogado.getEmpresa().getId().equals(request.getEmpresaId())) {
+            throw new RegraDeNegocioException("Você não tem permissão para registrar usuários em outra empresa.");
+        }
+
         var empresa = empresaRepository.findById(request.getEmpresaId())
                 .orElseThrow(() -> new RegraDeNegocioException("Empresa não encontrada"));
 
@@ -88,5 +95,12 @@ public class AuthService {
                 .role(usuario.getRole().name())
                 .expiracaoEmMs(jwtService.getExpiracaoMs())
                 .build();
+    }
+
+    private Usuario getUsuarioAutenticado() {
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Usuário não autenticado"));
     }
 }

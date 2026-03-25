@@ -1,6 +1,6 @@
 package br.com.nexstock.nexstock_api.service;
 
-import br.com.nexstock.nexstock_api.domain.entity.Contrato;
+import br.com.nexstock.nexstock_api.domain.entity.Empresa;
 import br.com.nexstock.nexstock_api.domain.entity.Usuario;
 import br.com.nexstock.nexstock_api.domain.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,25 +18,25 @@ class JwtServiceTest {
 
     private JwtService jwtService;
     private Usuario usuario;
-    private UUID contratoId;
+    private UUID empresaId;
 
     @BeforeEach
     void setUp() {
         jwtService = new JwtService();
 
-        String secret = Base64.getEncoder().encodeToString(new byte[64]);
+        String secret = Base64.getEncoder().encodeToString("minha-secret-super-segura-nexstock-2026".getBytes());
         ReflectionTestUtils.setField(jwtService, "secret", secret);
         ReflectionTestUtils.setField(jwtService, "expiracaoMs", 86400000L);
 
-        contratoId = UUID.randomUUID();
-        Contrato contrato = Contrato.builder().id(contratoId).build();
+        empresaId = UUID.randomUUID();
+        Empresa empresa = Empresa.builder().id(empresaId).nome("NexStock Cuiabá").build();
 
         usuario = Usuario.builder()
                 .id(UUID.randomUUID())
-                .contrato(contrato)
+                .empresa(empresa)
                 .email("joao@nexstock.com")
                 .senha("$2a$hash")
-                .role(Role.OPERADOR)
+                .role(Role.ADMIN)
                 .ativo(true)
                 .build();
     }
@@ -51,11 +51,11 @@ class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("deve extrair contratoId do token")
-    void deveExtrairContratoId() {
+    @DisplayName("deve extrair empresaId do token")
+    void deveExtrairEmpresaId() {
         String token = jwtService.gerarToken(usuario);
 
-        assertThat(jwtService.extrairContratoId(token)).isEqualTo(contratoId);
+        assertThat(jwtService.extrairEmpresaId(token)).isEqualTo(empresaId);
     }
 
     @Test
@@ -70,7 +70,7 @@ class JwtServiceTest {
     @DisplayName("deve rejeitar token adulterado")
     void deveRejeitarTokenAdulterado() {
         String token = jwtService.gerarToken(usuario);
-        String adulterado = token.substring(0, token.length() - 5) + "XXXXX";
+        String adulterado = token.substring(0, token.length() - 5) + "ABCDE";
 
         assertThat(jwtService.isTokenValido(adulterado)).isFalse();
     }
@@ -78,7 +78,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("deve rejeitar token expirado")
     void deveRejeitarTokenExpirado() {
-        ReflectionTestUtils.setField(jwtService, "expiracaoMs", -1L);
+        ReflectionTestUtils.setField(jwtService, "expiracaoMs", -1000L);
         String token = jwtService.gerarToken(usuario);
 
         assertThat(jwtService.isTokenValido(token)).isFalse();

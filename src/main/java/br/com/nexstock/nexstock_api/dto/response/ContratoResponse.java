@@ -29,8 +29,8 @@ public class ContratoResponse {
     public static ContratoResponse from(Contrato contrato) {
         return ContratoResponse.builder()
                 .id(contrato.getId())
-                .empresaId(contrato.getEmpresa().getId())
-                .planoId(contrato.getPlano().getId())
+                .empresaId(contrato.getEmpresa() != null ? contrato.getEmpresa().getId() : null)
+                .planoId(contrato.getPlano() != null ? contrato.getPlano().getId() : null)
                 .planoNome(contrato.getPlano().getNome())
                 .dataInicio(contrato.getDataInicio())
                 .dataFim(contrato.getDataFim())

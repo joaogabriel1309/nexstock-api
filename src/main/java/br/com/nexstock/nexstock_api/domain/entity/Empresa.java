@@ -32,8 +32,8 @@ public class Empresa {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "contrato_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "contrato_id", nullable = true)
     private Contrato contrato;
 
     @Column(name = "nome", nullable = false, length = 200)

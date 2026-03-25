@@ -7,6 +7,7 @@ import br.com.nexstock.nexstock_api.dto.response.ContratoResponse;
 import br.com.nexstock.nexstock_api.exception.RegraDeNegocioException;
 import br.com.nexstock.nexstock_api.exception.RecursoNaoEncontradoException;
 import br.com.nexstock.nexstock_api.repository.ContratoRepository;
+import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
 import br.com.nexstock.nexstock_api.repository.PlanoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +25,41 @@ import java.util.UUID;
 public class ContratoService {
 
     private final ContratoRepository contratoRepository;
-    private final PlanoRepository planoRepository;
+    private final PlanoService planoService;
+    private final EmpresaRepository empresaRepository;
+
+    @Transactional
+    public Contrato criar(ContratoRequest request) {
+        Empresa empresa = empresaRepository.findById(request.getEmpresaId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Empresa", request.getEmpresaId()));
+
+        boolean contratoAtivo = contratoRepository.existsByEmpresaIdAndStatus(empresa.getId(), StatusContrato.ATIVO);
+        if (contratoAtivo) {
+            throw new RegraDeNegocioException("A empresa já possui um contrato ativo.");
+        }
+
+        Plano plano = planoService.buscarPorId(request.getPlanoId());
+
+        if (!Boolean.TRUE.equals(plano.getAtivo())) {
+            throw new RegraDeNegocioException("O plano selecionado não está ativo.");
+        }
+
+        Contrato contrato = Contrato.builder()
+                .empresa(empresa)
+                .plano(plano)
+                .dataInicio(LocalDate.now())
+                .dataFim(LocalDate.now().plusDays(plano.getDuracaoDias()))
+                .status(StatusContrato.ATIVO)
+                .build();
+
+        log.info("Novo contrato criado para empresa: {} | Plano: {}", empresa.getNome(), plano.getNome());
+
+        return contratoRepository.save(contrato);
+    }
 
     @Transactional
     public Contrato gerarContratoInicial(UUID planoId) {
-        Plano plano = planoRepository.findById(planoId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Plano", planoId));
+        Plano plano = planoService.buscarPorId(planoId);
 
         if (!Boolean.TRUE.equals(plano.getAtivo())) {
             throw new RegraDeNegocioException("O plano '" + plano.getNome() + "' não está disponível para novas contratações.");
@@ -75,6 +105,25 @@ public class ContratoService {
         log.info("Contrato {} renovado automaticamente para o novo ID {}", contratoAtualId, novo.getId());
 
         return contratoRepository.save(novo);
+    }
+
+    @Transactional
+    public Contrato renovar(UUID id) {
+        Contrato contratoAntigo = contratoRepository.findById(id)
+                .orElseThrow(() -> new RegraDeNegocioException("Contrato não encontrado"));
+
+        Contrato novoContrato = Contrato.builder()
+                .empresa(contratoAntigo.getEmpresa())
+                .plano(contratoAntigo.getPlano())
+                .status(StatusContrato.ATIVO)
+                .dataInicio(LocalDate.now())
+                .dataFim(LocalDate.now().plusDays(contratoAntigo.getPlano().getDuracaoDias()))
+                .build();
+
+        contratoAntigo.setStatus(StatusContrato.CANCELADO);
+        contratoRepository.save(contratoAntigo);
+
+        return contratoRepository.save(novoContrato);
     }
 
     @Transactional
