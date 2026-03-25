@@ -15,30 +15,32 @@ import java.util.UUID;
 public class ProdutoResponse {
 
     private UUID id;
-    private UUID contratoId;
+    private UUID empresaId;
     private String nome;
     private String codigoBarras;
     private BigDecimal estoque;
     private LocalDateTime atualizadoEm;
     private Long versao;
     private UUID dispositivoUltimaAlteracaoId;
-    private Boolean deletado;
+    private LocalDateTime deletadoEm;
 
     public static ProdutoResponse from(Produto produto) {
+        if (produto == null) return null;
+
         return ProdutoResponse.builder()
                 .id(produto.getId())
-                .contratoId(produto.getContrato().getId())
+                .empresaId(produto.getEmpresa().getId())
                 .nome(produto.getNome())
                 .codigoBarras(produto.getCodigoBarras())
                 .estoque(produto.getEstoque())
                 .atualizadoEm(produto.getAtualizadoEm())
                 .versao(produto.getVersao())
+                .deletadoEm(produto.getDeletadoEm())
                 .dispositivoUltimaAlteracaoId(
-                    produto.getDispositivoUltimaAlteracao() != null
-                        ? produto.getDispositivoUltimaAlteracao().getId()
-                        : null
+                        produto.getDispositivoUltimaAlteracao() != null
+                                ? produto.getDispositivoUltimaAlteracao().getId()
+                                : null
                 )
-                .deletado(produto.getDeletado())
                 .build();
     }
 }

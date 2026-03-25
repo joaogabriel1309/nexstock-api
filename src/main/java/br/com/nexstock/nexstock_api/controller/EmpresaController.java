@@ -23,45 +23,34 @@ public class EmpresaController {
     @PostMapping
     public ResponseEntity<EmpresaResponse> criar(@RequestBody @Valid EmpresaRequest request) {
         EmpresaResponse response = empresaService.criar(request);
+
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(response.getId()).toUri();
+
         return ResponseEntity.created(location).body(response);
     }
 
-    @GetMapping("/contrato/{contratoId}")
-    public ResponseEntity<List<EmpresaResponse>> listar(@PathVariable UUID contratoId) {
-        return ResponseEntity.ok(empresaService.listarPorContrato(contratoId));
+    @GetMapping
+    public ResponseEntity<List<EmpresaResponse>> listarTodas() {
+        return ResponseEntity.ok(empresaService.listarTodas());
     }
 
-    @GetMapping("/contrato/{contratoId}/{id}")
-    public ResponseEntity<EmpresaResponse> buscarPorId(
-            @PathVariable UUID contratoId,
-            @PathVariable UUID id) {
-        return ResponseEntity.ok(empresaService.buscarPorId(contratoId, id));
+    @GetMapping("/{id}")
+    public ResponseEntity<EmpresaResponse> buscarPorId(@PathVariable UUID id) {
+        return ResponseEntity.ok(EmpresaResponse.from(empresaService.buscarEntidade(id)));
     }
 
-    @PutMapping("/contrato/{contratoId}/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<EmpresaResponse> atualizar(
-            @PathVariable UUID contratoId,
             @PathVariable UUID id,
             @RequestBody @Valid EmpresaRequest request) {
-        return ResponseEntity.ok(empresaService.atualizar(contratoId, id, request));
+        return ResponseEntity.ok(empresaService.atualizar(id, request));
     }
 
-    @PatchMapping("/contrato/{contratoId}/{id}/desativar")
-    public ResponseEntity<Void> desativar(
-            @PathVariable UUID contratoId,
-            @PathVariable UUID id) {
-        empresaService.desativar(contratoId, id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/contrato/{contratoId}/{id}/reativar")
-    public ResponseEntity<Void> reativar(
-            @PathVariable UUID contratoId,
-            @PathVariable UUID id) {
-        empresaService.reativar(contratoId, id);
+    @PatchMapping("/{id}/desativar")
+    public ResponseEntity<Void> desativar(@PathVariable UUID id) {
+        empresaService.desativar(id);
         return ResponseEntity.noContent().build();
     }
 }

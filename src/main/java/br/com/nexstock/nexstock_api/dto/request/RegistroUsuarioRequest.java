@@ -13,19 +13,19 @@ import java.util.UUID;
 @Builder
 public class RegistroUsuarioRequest {
 
-    @NotNull(message = "ID do contrato é obrigatório")
-    private UUID contratoId;
+    @NotNull(message = "O ID da empresa é obrigatório")
+    private UUID empresaId;
 
-    @NotBlank(message = "Nome é obrigatório")
+    @NotBlank(message = "O nome é obrigatório")
     @Size(max = 150)
     private String nome;
 
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email inválido")
+    @NotBlank(message = "O e-mail é obrigatório")
+    @Email(message = "Por favor, insira um e-mail válido")
     private String email;
 
-    @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 8, message = "Senha deve ter no mínimo 8 caracteres")
+    @NotBlank(message = "A senha é obrigatória")
+    @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
     private String senha;
 
     private Role role;

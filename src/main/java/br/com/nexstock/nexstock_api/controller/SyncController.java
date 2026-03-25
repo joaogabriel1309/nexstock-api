@@ -17,13 +17,15 @@ public class SyncController {
 
     private final SyncService syncService;
 
-
     @PostMapping
     public ResponseEntity<SyncResponse> sincronizar(@RequestBody @Valid SyncRequest request) {
-        log.info("POST /api/sync — contrato: {} | dispositivo: {}",
-                request.getContratoId(), request.getDispositivoId());
+        log.info("Requisição de Sync recebida — Empresa: {} | Dispositivo: {} | Itens: {}",
+                request.getEmpresaId(),
+                request.getDispositivoId(),
+                request.getProdutos().size() + request.getMovimentacoes().size());
 
         SyncResponse response = syncService.processar(request);
+
         return ResponseEntity.ok(response);
     }
 }

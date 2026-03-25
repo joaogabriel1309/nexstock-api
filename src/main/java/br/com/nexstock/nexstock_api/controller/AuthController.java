@@ -23,6 +23,7 @@ public class AuthController {
 
     @PostMapping("/registrar")
     public ResponseEntity<LoginResponse> registrar(@RequestBody @Valid RegistroUsuarioRequest request) {
-        return ResponseEntity.ok(authService.registrar(request));
+        LoginResponse response = authService.registrar(request);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(response);
     }
 }

@@ -16,16 +16,16 @@ import java.util.UUID;
 @Builder
 public class SyncRequest {
 
-    @NotNull(message = "ID do contrato é obrigatório")
-    private UUID contratoId;
+    @NotNull(message = "O ID da empresa é obrigatório")
+    private UUID empresaId;
 
-    @NotNull(message = "ID do dispositivo é obrigatório")
+    @NotNull(message = "O ID do dispositivo é obrigatório")
     private UUID dispositivoId;
 
     private LocalDateTime ultimoSyncCliente;
 
     @Valid
-   @Builder.Default
+    @Builder.Default
     private List<ProdutoSyncRequest> produtos = new ArrayList<>();
 
     @Valid

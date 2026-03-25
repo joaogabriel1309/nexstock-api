@@ -1,12 +1,13 @@
 package br.com.nexstock.nexstock_api.service;
 
-import br.com.nexstock.nexstock_api.domain.entity.Contrato;
 import br.com.nexstock.nexstock_api.domain.entity.Dispositivo;
+import br.com.nexstock.nexstock_api.domain.entity.Empresa;
 import br.com.nexstock.nexstock_api.domain.entity.Produto;
 import br.com.nexstock.nexstock_api.dto.request.ProdutoRequest;
 import br.com.nexstock.nexstock_api.dto.response.ProdutoResponse;
-import br.com.nexstock.nexstock_api.exception.RegraDeNegocioException;
 import br.com.nexstock.nexstock_api.exception.RecursoNaoEncontradoException;
+import br.com.nexstock.nexstock_api.exception.RegraDeNegocioException;
+import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
 import br.com.nexstock.nexstock_api.repository.ProdutoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -31,23 +33,36 @@ import static org.mockito.Mockito.*;
 @DisplayName("ProdutoService")
 class ProdutoServiceTest {
 
-    @Mock ProdutoRepository  produtoRepository;
-    @Mock ContratoService    contratoService;
+    @Mock ProdutoRepository produtoRepository;
+    @Mock EmpresaRepository empresaRepository;
     @Mock DispositivoService dispositivoService;
 
     @InjectMocks ProdutoService produtoService;
 
-    private UUID contratoId;
+    private UUID empresaId;
     private UUID dispositivoId;
-    private Contrato contrato;
+    private UUID produtoId;
+    private Empresa empresa;
     private Dispositivo dispositivo;
+    private Produto produtoAtivo;
 
     @BeforeEach
     void setUp() {
-        contratoId   = UUID.randomUUID();
+        empresaId = UUID.randomUUID();
         dispositivoId = UUID.randomUUID();
-        contrato     = Contrato.builder().id(contratoId).build();
-        dispositivo  = Dispositivo.builder().id(dispositivoId).contrato(contrato).build();
+        produtoId = UUID.randomUUID();
+
+        empresa = Empresa.builder().id(empresaId).nome("Loja Matriz").build();
+        dispositivo = Dispositivo.builder().id(dispositivoId).empresa(empresa).build();
+
+        produtoAtivo = Produto.builder()
+                .id(produtoId)
+                .empresa(empresa)
+                .nome("Coca-Cola 2L")
+                .codigoBarras("789101010")
+                .estoque(new BigDecimal("50"))
+                .versao(1L)
+                .build();
     }
 
     @Nested
@@ -55,139 +70,114 @@ class ProdutoServiceTest {
     class Criar {
 
         @Test
-        @DisplayName("deve criar produto com versão 1 e deletado=false")
-        void deveCriarProdutoComVersaoInicial() {
+        @DisplayName("deve criar produto com versão 1 e deletadoEm nulo")
+        void deveCriarProdutoComSucesso() {
             var request = ProdutoRequest.builder()
-                    .contratoId(contratoId)
+                    .empresaId(empresaId)
                     .dispositivoId(dispositivoId)
-                    .nome("Arroz 5kg")
-                    .codigoBarras("7896000123456")
-                    .estoque(new BigDecimal("100"))
+                    .nome("Coca-Cola 2L")
+                    .codigoBarras("789101010")
+                    .estoque(new BigDecimal("50"))
                     .build();
 
-            when(contratoService.buscarEntidadeVigente(contratoId)).thenReturn(contrato);
-            when(dispositivoService.buscarEntidade(contratoId, dispositivoId)).thenReturn(dispositivo);
-            when(produtoRepository.findAllByContratoIdAndDeletadoFalse(contratoId))
-                    .thenReturn(List.of()); // sem duplicata de código de barras
-            when(produtoRepository.save(any())).thenAnswer(inv -> {
-                Produto p = inv.getArgument(0);
-                p = Produto.builder()
-                        .id(UUID.randomUUID())
-                        .contrato(p.getContrato())
-                        .nome(p.getNome())
-                        .codigoBarras(p.getCodigoBarras())
-                        .estoque(p.getEstoque())
-                        .atualizadoEm(p.getAtualizadoEm())
-                        .versao(p.getVersao())
-                        .deletado(p.getDeletado())
-                        .dispositivoUltimaAlteracao(p.getDispositivoUltimaAlteracao())
-                        .build();
-                return p;
-            });
+            when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+            when(dispositivoService.buscarEntidade(empresaId, dispositivoId)).thenReturn(dispositivo);
+            when(produtoRepository.existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull("789101010", empresaId))
+                    .thenReturn(false);
+            when(produtoRepository.save(any(Produto.class))).thenAnswer(i -> i.getArgument(0));
 
             ProdutoResponse response = produtoService.criar(request);
 
+            assertThat(response.getNome()).isEqualTo("Coca-Cola 2L");
             assertThat(response.getVersao()).isEqualTo(1L);
-            assertThat(response.getDeletado()).isFalse();
-            assertThat(response.getNome()).isEqualTo("Arroz 5kg");
+            verify(produtoRepository).save(any(Produto.class));
         }
 
         @Test
-        @DisplayName("deve lançar exceção quando código de barras já existe no contrato")
-        void deveLancarExcecaoComCodigoBarrasDuplicado() {
-            var produtoExistente = Produto.builder()
-                    .id(UUID.randomUUID())
-                    .codigoBarras("7896000123456")
-                    .deletado(false)
-                    .build();
-
+        @DisplayName("deve lançar exceção se código de barras já existir na mesma empresa")
+        void deveLancarExcecaoCodigoBarrasDuplicado() {
             var request = ProdutoRequest.builder()
-                    .contratoId(contratoId)
+                    .empresaId(empresaId)
                     .dispositivoId(dispositivoId)
-                    .nome("Arroz 5kg")
-                    .codigoBarras("7896000123456")
-                    .estoque(new BigDecimal("100"))
+                    .codigoBarras("789101010")
                     .build();
 
-            when(contratoService.buscarEntidadeVigente(contratoId)).thenReturn(contrato);
-            when(dispositivoService.buscarEntidade(contratoId, dispositivoId)).thenReturn(dispositivo);
-            when(produtoRepository.findAllByContratoIdAndDeletadoFalse(contratoId))
-                    .thenReturn(List.of(produtoExistente));
+            when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+            when(dispositivoService.buscarEntidade(empresaId, dispositivoId)).thenReturn(dispositivo);
+            when(produtoRepository.existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull("789101010", empresaId))
+                    .thenReturn(true);
 
             assertThatThrownBy(() -> produtoService.criar(request))
                     .isInstanceOf(RegraDeNegocioException.class)
-                    .hasMessageContaining("já está em uso");
+                    .hasMessageContaining("já cadastrado nesta empresa");
         }
     }
 
     @Nested
-    @DisplayName("deletar (soft delete)")
+    @DisplayName("atualizar")
+    class Atualizar {
+
+        @Test
+        @DisplayName("deve atualizar dados e incrementar a versão para o Sync")
+        void deveAtualizarEIncrementarVersao() {
+            var request = ProdutoRequest.builder()
+                    .dispositivoId(dispositivoId)
+                    .nome("Coca-Cola Zero 2L")
+                    .codigoBarras("789101010")
+                    .estoque(new BigDecimal("45"))
+                    .build();
+
+            when(produtoRepository.findByIdAndEmpresaIdAndDeletadoEmIsNull(produtoId, empresaId))
+                    .thenReturn(Optional.of(produtoAtivo));
+            when(dispositivoService.buscarEntidade(empresaId, dispositivoId)).thenReturn(dispositivo);
+
+            when(produtoRepository.existsCodigoBarrasEmOutroProduto(empresaId, "789101010", produtoId))
+                    .thenReturn(false);
+
+            when(produtoRepository.save(any(Produto.class))).thenAnswer(i -> i.getArgument(0));
+
+            ProdutoResponse response = produtoService.atualizar(empresaId, produtoId, request);
+
+            assertThat(response.getNome()).isEqualTo("Coca-Cola Zero 2L");
+            assertThat(response.getVersao()).isEqualTo(2L);
+        }
+    }
+
+    @Nested
+    @DisplayName("deletar (Soft Delete)")
     class Deletar {
 
         @Test
-        @DisplayName("deve marcar produto como deletado sem remover do banco")
-        void deveMarcarComoDeletadoSemRemover() {
-            var produtoId = UUID.randomUUID();
-            var produto   = Produto.builder()
-                    .id(produtoId)
-                    .contrato(contrato)
-                    .nome("Feijão 1kg")
-                    .atualizadoEm(LocalDateTime.now().minusHours(1))
-                    .versao(1L)
-                    .deletado(false)
-                    .build();
+        @DisplayName("deve preencher deletadoEm, incrementar versão e não excluir do banco")
+        void deveFazerSoftDelete() {
+            when(produtoRepository.findByIdAndEmpresaIdAndDeletadoEmIsNull(produtoId, empresaId))
+                    .thenReturn(Optional.of(produtoAtivo));
+            when(dispositivoService.buscarEntidade(empresaId, dispositivoId)).thenReturn(dispositivo);
+            when(produtoRepository.save(any(Produto.class))).thenAnswer(i -> i.getArgument(0));
 
-            when(produtoRepository.findByIdAndContratoId(produtoId, contratoId))
-                    .thenReturn(Optional.of(produto));
-            when(dispositivoService.buscarEntidade(contratoId, dispositivoId))
-                    .thenReturn(dispositivo);
-            when(produtoRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+            produtoService.deletar(empresaId, produtoId, dispositivoId);
 
-            produtoService.deletar(contratoId, produtoId, dispositivoId);
-
-            assertThat(produto.getDeletado()).isTrue();
-            assertThat(produto.getVersao()).isEqualTo(2L);
+            assertThat(produtoAtivo.getDeletadoEm()).isNotNull();
+            assertThat(produtoAtivo.getVersao()).isEqualTo(2L);
+            verify(produtoRepository, never()).delete(any());
             verify(produtoRepository, never()).deleteById(any());
-        }
-
-        @Test
-        @DisplayName("deve lançar exceção ao tentar deletar produto já deletado")
-        void deveLancarExcecaoAoDeletarProdutoJaDeletado() {
-            var produtoId = UUID.randomUUID();
-            var produto   = Produto.builder()
-                    .id(produtoId)
-                    .contrato(contrato)
-                    .deletado(true)
-                    .build();
-
-            when(produtoRepository.findByIdAndContratoId(produtoId, contratoId))
-                    .thenReturn(Optional.of(produto));
-
-            assertThatThrownBy(() -> produtoService.deletar(contratoId, produtoId, dispositivoId))
-                    .isInstanceOf(RecursoNaoEncontradoException.class);
         }
     }
 
     @Nested
-    @DisplayName("listarParaSync")
-    class ListarParaSync {
+    @DisplayName("consultas")
+    class Consultas {
 
         @Test
-        @DisplayName("deve incluir produtos deletados no delta de sync")
-        void deveIncluirDeletadosNoDeltaSync() {
-            var desde = LocalDateTime.now().minusHours(1);
-            var ativo  = Produto.builder().id(UUID.randomUUID()).contrato(contrato)
-                    .nome("Ativo").atualizadoEm(LocalDateTime.now()).versao(1L).deletado(false).build();
-            var deletado = Produto.builder().id(UUID.randomUUID()).contrato(contrato)
-                    .nome("Deletado").atualizadoEm(LocalDateTime.now()).versao(2L).deletado(true).build();
+        @DisplayName("listarParaSync deve retornar todos os itens modificados desde a data")
+        void listarParaSync() {
+            LocalDateTime desde = LocalDateTime.now().minusHours(1);
+            when(produtoRepository.findAllParaSync(empresaId, desde)).thenReturn(List.of(produtoAtivo));
 
-            when(produtoRepository.findAllParaSync(contratoId, desde))
-                    .thenReturn(List.of(ativo, deletado));
+            List<ProdutoResponse> result = produtoService.listarParaSync(empresaId, desde);
 
-            List<ProdutoResponse> result = produtoService.listarParaSync(contratoId, desde);
-
-            assertThat(result).hasSize(2);
-            assertThat(result).anyMatch(ProdutoResponse::getDeletado);
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getId()).isEqualTo(produtoId);
         }
     }
 }

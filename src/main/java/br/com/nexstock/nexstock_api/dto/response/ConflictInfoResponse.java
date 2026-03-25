@@ -10,13 +10,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ConflictInfo {
+public class ConflictInfoResponse {
 
     private UUID produtoId;
+
+    private UUID empresaId;
 
     private String resolucao;
 
     private LocalDateTime clienteAtualizadoEm;
     private LocalDateTime servidorAtualizadoEm;
+
     private Long versaoFinal;
 }

@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,12 +21,16 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UsuarioRepository usuarioRepository;
+
+    public JwtAuthFilter(JwtService jwtService, @Lazy UsuarioRepository usuarioRepository) {
+        this.jwtService = jwtService;
+        this.usuarioRepository = usuarioRepository;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -52,19 +57,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String email      = jwtService.extrairEmail(token);
-        UUID   contratoId = jwtService.extrairContratoId(token);
+        String email = jwtService.extrairEmail(token);
 
-        usuarioRepository.findByEmailAndContratoId(email, contratoId)
+        usuarioRepository.findByEmail(email)
                 .ifPresent(usuario -> {
                     if (usuario.isEnabled()) {
-                        UserDetails userDetails = usuario;
                         var auth = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities()
+                                usuario,
+                                null,
+                                usuario.getAuthorities()
                         );
                         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(auth);
-                        log.debug("Usuário autenticado via JWT: {} | contrato: {}", email, contratoId);
+                        log.debug("Usuário autenticado via JWT: email: {}", email);
                     }
                 });
 

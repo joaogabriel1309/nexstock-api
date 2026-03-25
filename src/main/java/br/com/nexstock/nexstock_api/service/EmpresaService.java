@@ -25,37 +25,39 @@ public class EmpresaService {
 
     @Transactional
     public EmpresaResponse criar(EmpresaRequest request) {
-        Contrato contrato = contratoService.buscarEntidadeVigente(request.getContratoId());
-
-        if (empresaRepository.existsByCpfCnpjAndContratoId(request.getCpfCnpj(), contrato.getId())) {
+        if (empresaRepository.existsByCpfCnpj(request.getCpfCnpj())) {
             throw new RegraDeNegocioException(
-                    "CPF/CNPJ '" + request.getCpfCnpj() + "' já cadastrado neste contrato."
+                    "O CPF/CNPJ '" + request.getCpfCnpj() + "' já está cadastrado no NexStock."
             );
         }
 
+        Contrato novoContrato = contratoService.gerarContratoInicial(request.getPlanoId());
+
         Empresa empresa = Empresa.builder()
-                .contrato(contrato)
+                .contrato(novoContrato)
                 .nome(request.getNome())
                 .razaoSocial(request.getRazaoSocial())
                 .cpfCnpj(request.getCpfCnpj())
                 .email(request.getEmail())
                 .telefone(request.getTelefone())
+                .ativo(true)
                 .build();
 
         Empresa salva = empresaRepository.save(empresa);
-        log.info("Empresa {} criada para contrato {}", salva.getId(), contrato.getId());
+
+        log.info("Nova Empresa/Tenant criada: {} (ID: {}) com Contrato: {}",
+                salva.getNome(), salva.getId(), novoContrato.getId());
+
         return EmpresaResponse.from(salva);
     }
 
     @Transactional
-    public EmpresaResponse atualizar(UUID contratoId, UUID id, EmpresaRequest request) {
-        Empresa empresa = buscarEntidade(contratoId, id);
+    public EmpresaResponse atualizar(UUID id, EmpresaRequest request) {
+        Empresa empresa = buscarEntidade(id);
 
-        boolean cpfCnpjAlterado = !empresa.getCpfCnpj().equals(request.getCpfCnpj());
-        if (cpfCnpjAlterado && empresaRepository.existsByCpfCnpjAndContratoId(request.getCpfCnpj(), contratoId)) {
-            throw new RegraDeNegocioException(
-                    "CPF/CNPJ '" + request.getCpfCnpj() + "' já cadastrado neste contrato."
-            );
+        if (!empresa.getCpfCnpj().equals(request.getCpfCnpj()) &&
+                empresaRepository.existsByCpfCnpj(request.getCpfCnpj())) {
+            throw new RegraDeNegocioException("Este CPF/CNPJ já pertence a outra empresa.");
         }
 
         empresa.setNome(request.getNome());
@@ -68,37 +70,25 @@ public class EmpresaService {
     }
 
     @Transactional(readOnly = true)
-    public EmpresaResponse buscarPorId(UUID contratoId, UUID id) {
-        return EmpresaResponse.from(buscarEntidade(contratoId, id));
-    }
-
-    @Transactional(readOnly = true)
-    public List<EmpresaResponse> listarPorContrato(UUID contratoId) {
-        return empresaRepository.findAllByContratoId(contratoId)
+    public List<EmpresaResponse> listarTodas() {
+        log.info("Buscando todas as empresas cadastradas no sistema.");
+        return empresaRepository.findAll()
                 .stream()
                 .map(EmpresaResponse::from)
                 .toList();
     }
 
     @Transactional
-    public void desativar(UUID contratoId, UUID id) {
-        Empresa empresa = buscarEntidade(contratoId, id);
-        empresa.desativar();
+    public void desativar(UUID id) {
+        Empresa empresa = buscarEntidade(id);
+        empresa.setAtivo(false);
         empresaRepository.save(empresa);
-        log.info("Empresa {} desativada", id);
-    }
-
-    @Transactional
-    public void reativar(UUID contratoId, UUID id) {
-        Empresa empresa = buscarEntidade(contratoId, id);
-        empresa.reativar();
-        empresaRepository.save(empresa);
-        log.info("Empresa {} reativada", id);
+        log.warn("Empresa {} foi DESATIVADA. Usuários não conseguirão logar.", id);
     }
 
     @Transactional(readOnly = true)
-    public Empresa buscarEntidade(UUID contratoId, UUID id) {
-        return empresaRepository.findByIdAndContratoId(id, contratoId)
+    public Empresa buscarEntidade(UUID id) {
+        return empresaRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empresa", id));
     }
 }

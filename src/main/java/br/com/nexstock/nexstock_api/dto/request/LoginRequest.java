@@ -14,9 +14,6 @@ import java.util.UUID;
 @Builder
 public class LoginRequest {
 
-    @NotNull(message = "ID do contrato é obrigatório")
-    private UUID contratoId;
-
     @NotBlank(message = "Email é obrigatório")
     @Email(message = "Email inválido")
     private String email;

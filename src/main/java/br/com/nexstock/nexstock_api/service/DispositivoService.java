@@ -1,12 +1,15 @@
 package br.com.nexstock.nexstock_api.service;
 
-import br.com.nexstock.nexstock_api.domain.entity.Contrato;
 import br.com.nexstock.nexstock_api.domain.entity.Dispositivo;
+import br.com.nexstock.nexstock_api.domain.entity.Empresa;
+import br.com.nexstock.nexstock_api.domain.entity.Usuario;
 import br.com.nexstock.nexstock_api.dto.request.DispositivoRequest;
 import br.com.nexstock.nexstock_api.dto.response.DispositivoResponse;
 import br.com.nexstock.nexstock_api.exception.LimiteDispositivosException;
 import br.com.nexstock.nexstock_api.exception.RecursoNaoEncontradoException;
 import br.com.nexstock.nexstock_api.repository.DispositivoRepository;
+import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
+import br.com.nexstock.nexstock_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,46 +24,61 @@ import java.util.UUID;
 public class DispositivoService {
 
     private final DispositivoRepository dispositivoRepository;
-    private final ContratoService       contratoService;
+    private final EmpresaRepository empresaRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Transactional
     public DispositivoResponse registrar(DispositivoRequest request) {
-        Contrato contrato = contratoService.buscarEntidadeVigente(request.getContratoId());
+        Empresa empresa = empresaRepository.findById(request.getEmpresaId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Empresa", request.getEmpresaId()));
 
-        long totalAtual = dispositivoRepository.countByContratoId(contrato.getId());
-        int  limite     = contrato.getPlano().getMaxDispositivos();
-
-        if (totalAtual >= limite) {
-            throw new LimiteDispositivosException(limite, contrato.getPlano().getNome());
+        var contratoAtivo = empresa.getContrato();
+        if (contratoAtivo == null || !contratoAtivo.estaVigente()) {
+            throw new br.com.nexstock.nexstock_api.exception.ContratoInativoException("Empresa sem contrato ativo.");
         }
 
+        long totalAtual = dispositivoRepository.countByEmpresaId(empresa.getId());
+        int limite = contratoAtivo.getPlano().getMaxDispositivos();
+
+        if (totalAtual >= limite) {
+            throw new LimiteDispositivosException(limite, contratoAtivo.getPlano().getNome());
+        }
+
+        Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário", request.getUsuarioId()));
+
         Dispositivo dispositivo = Dispositivo.builder()
-                .contrato(contrato)
                 .nome(request.getNome())
                 .sistema(request.getSistema())
+                .empresa(empresa)
+                .usuario(usuario)
                 .build();
 
         Dispositivo salvo = dispositivoRepository.save(dispositivo);
-        log.info("Dispositivo {} registrado no contrato {}", salvo.getId(), contrato.getId());
+
+        log.info("Dispositivo {} ('{}') registrado para a empresa {}", salvo.getId(), salvo.getNome(), empresa.getNome());
+
         return DispositivoResponse.from(salvo);
     }
 
     @Transactional(readOnly = true)
-    public DispositivoResponse buscarPorId(UUID contratoId, UUID id) {
-        return DispositivoResponse.from(buscarEntidade(contratoId, id));
-    }
-
-    @Transactional(readOnly = true)
-    public List<DispositivoResponse> listarPorContrato(UUID contratoId) {
-        return dispositivoRepository.findAllByContratoId(contratoId)
+    public List<DispositivoResponse> listarPorEmpresa(UUID empresaId) {
+        return dispositivoRepository.findAllByEmpresaId(empresaId)
                 .stream()
                 .map(DispositivoResponse::from)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public Dispositivo buscarEntidade(UUID contratoId, UUID id) {
-        return dispositivoRepository.findByIdAndContratoId(id, contratoId)
+    public Dispositivo buscarEntidade(UUID empresaId, UUID id) {
+        return dispositivoRepository.findByIdAndEmpresaId(id, empresaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Dispositivo", id));
+    }
+
+    @Transactional
+    public void remover(UUID empresaId, UUID id) {
+        Dispositivo dispositivo = buscarEntidade(empresaId, id);
+        dispositivoRepository.delete(dispositivo);
+        log.info("Dispositivo {} removido da empresa {}", id, empresaId);
     }
 }

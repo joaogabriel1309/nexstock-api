@@ -18,6 +18,9 @@ public class MovimentacaoSyncRequest {
     @NotNull(message = "ID da movimentação é obrigatório")
     private UUID id;
 
+    @NotNull(message = "O ID da empresa é obrigatório para sincronismo")
+    private UUID empresaId;
+
     @NotNull(message = "ID do produto é obrigatório")
     private UUID produtoId;
 
@@ -27,7 +30,4 @@ public class MovimentacaoSyncRequest {
     @NotNull(message = "Quantidade é obrigatória")
     @DecimalMin(value = "0.0001", message = "Quantidade deve ser maior que zero")
     private BigDecimal quantidade;
-
-    @NotNull(message = "criadoEm é obrigatório")
-    private LocalDateTime criadoEm;
 }

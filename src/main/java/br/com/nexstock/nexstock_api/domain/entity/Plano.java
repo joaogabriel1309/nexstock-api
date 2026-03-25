@@ -2,6 +2,8 @@ package br.com.nexstock.nexstock_api.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,6 +11,9 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "plano")
+
+@SQLDelete(sql = "UPDATE plano SET deletado_em = now(), atualizado_em = now() WHERE id = ?")
+@SQLRestriction("deletado_em IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -44,12 +49,31 @@ public class Plano {
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
+    @Column(name = "atualizado_em", nullable = false)
+    private LocalDateTime atualizadoEm;
+
+    @Column(name = "deletado_em")
+    private LocalDateTime deletadoEm;
+
     @PrePersist
-    private void prePersist() {
-        this.criadoEm = LocalDateTime.now();
+    public void prePersist() {
+        LocalDateTime agora = LocalDateTime.now();
+        this.criadoEm = agora;
+        this.atualizadoEm = agora;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.atualizadoEm = LocalDateTime.now();
     }
 
     public void desativar() {
         this.ativo = Boolean.FALSE;
+        this.atualizadoEm = LocalDateTime.now();
+    }
+
+    public void reativar() {
+        this.ativo = Boolean.TRUE;
+        this.atualizadoEm = LocalDateTime.now();
     }
 }

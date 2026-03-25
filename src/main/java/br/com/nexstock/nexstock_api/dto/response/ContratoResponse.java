@@ -16,8 +16,8 @@ import java.util.UUID;
 public class ContratoResponse {
 
     private UUID id;
-    private UUID clienteId;
-    private String clienteNome;
+    private UUID empresaId;
+    private String empresaNome;
     private UUID planoId;
     private String planoNome;
     private LocalDate dataInicio;
@@ -29,9 +29,8 @@ public class ContratoResponse {
     public static ContratoResponse from(Contrato contrato) {
         return ContratoResponse.builder()
                 .id(contrato.getId())
-                .clienteId(contrato.getCliente().getId())
-                .clienteNome(contrato.getCliente().getNome())
-                .planoId(contrato.getPlano().getId())
+                .empresaId(contrato.getEmpresa() != null ? contrato.getEmpresa().getId() : null)
+                .planoId(contrato.getPlano() != null ? contrato.getPlano().getId() : null)
                 .planoNome(contrato.getPlano().getNome())
                 .dataInicio(contrato.getDataInicio())
                 .dataFim(contrato.getDataFim())

@@ -1,21 +1,20 @@
 package br.com.nexstock.nexstock_api.service;
 
-import br.com.nexstock.nexstock_api.domain.entity.Contrato;
 import br.com.nexstock.nexstock_api.domain.entity.Usuario;
 import br.com.nexstock.nexstock_api.domain.enums.Role;
 import br.com.nexstock.nexstock_api.dto.request.LoginRequest;
 import br.com.nexstock.nexstock_api.dto.request.RegistroUsuarioRequest;
 import br.com.nexstock.nexstock_api.dto.response.LoginResponse;
 import br.com.nexstock.nexstock_api.exception.RegraDeNegocioException;
+import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
 import br.com.nexstock.nexstock_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -23,18 +22,18 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
-    private final ContratoService contratoService;
+    private final EmpresaRepository empresaRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         Usuario usuario = usuarioRepository
-                .findByEmailAndContratoId(request.getEmail(), request.getContratoId())
+                .findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Email ou senha inválidos"));
 
-        if (!usuario.isEnabled()) {
-            throw new BadCredentialsException("Usuário inativo");
+        if (!usuario.isEnabled() || !usuario.getEmpresa().getAtivo()) {
+            throw new BadCredentialsException("Usuário ou Empresa inativos");
         }
 
         if (!passwordEncoder.matches(request.getSenha(), usuario.getSenha())) {
@@ -42,13 +41,14 @@ public class AuthService {
         }
 
         String token = jwtService.gerarToken(usuario);
-        log.info("Login realizado — usuário: {} | contrato: {}", usuario.getEmail(), usuario.getContrato().getId());
+
+        log.info("Login realizado — usuário: {} | Empresa: {}", usuario.getEmail(), usuario.getEmpresa().getNome());
 
         return LoginResponse.builder()
                 .token(token)
                 .tipo("Bearer")
                 .usuarioId(usuario.getId())
-                .contratoId(usuario.getContrato().getId())
+                .empresaId(usuario.getEmpresa().getId())
                 .nome(usuario.getNome())
                 .email(usuario.getEmail())
                 .role(usuario.getRole().name())
@@ -58,24 +58,30 @@ public class AuthService {
 
     @Transactional
     public LoginResponse registrar(RegistroUsuarioRequest request) {
-        Contrato contrato = contratoService.buscarEntidadeVigente(request.getContratoId());
+        Usuario adminLogado = getUsuarioAutenticado();
 
-        if (usuarioRepository.existsByEmailAndContratoId(request.getEmail(), contrato.getId())) {
-            throw new RegraDeNegocioException(
-                    "Email '" + request.getEmail() + "' já está em uso neste contrato."
-            );
+        if (!adminLogado.getEmpresa().getId().equals(request.getEmpresaId())) {
+            throw new RegraDeNegocioException("Você não tem permissão para registrar usuários em outra empresa.");
+        }
+
+        var empresa = empresaRepository.findById(request.getEmpresaId())
+                .orElseThrow(() -> new RegraDeNegocioException("Empresa não encontrada"));
+
+        if (usuarioRepository.existsByEmail(request.getEmail())) {
+            throw new RegraDeNegocioException("O e-mail '" + request.getEmail() + "' já está em uso.");
         }
 
         Usuario usuario = Usuario.builder()
-                .contrato(contrato)
                 .nome(request.getNome())
                 .email(request.getEmail())
                 .senha(passwordEncoder.encode(request.getSenha()))
                 .role(request.getRole() != null ? request.getRole() : Role.OPERADOR)
+                .empresa(empresa)
                 .build();
 
         usuarioRepository.save(usuario);
-        log.info("Usuário registrado: {} | contrato: {}", usuario.getEmail(), contrato.getId());
+
+        log.info("Novo usuário registrado: {} na empresa: {}", usuario.getEmail(), empresa.getNome());
 
         String token = jwtService.gerarToken(usuario);
 
@@ -83,11 +89,18 @@ public class AuthService {
                 .token(token)
                 .tipo("Bearer")
                 .usuarioId(usuario.getId())
-                .contratoId(contrato.getId())
+                .empresaId(empresa.getId())
                 .nome(usuario.getNome())
                 .email(usuario.getEmail())
                 .role(usuario.getRole().name())
                 .expiracaoEmMs(jwtService.getExpiracaoMs())
                 .build();
+    }
+
+    private Usuario getUsuarioAutenticado() {
+        String email = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("Usuário não autenticado"));
     }
 }

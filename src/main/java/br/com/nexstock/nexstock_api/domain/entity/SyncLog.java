@@ -9,12 +9,12 @@ import java.util.UUID;
 
 @Entity
 @Table(
-    name = "sync_log",
-    indexes = {
-        @Index(name = "idx_sync_log_contrato_id",    columnList = "contrato_id"),
-        @Index(name = "idx_sync_log_dispositivo_id", columnList = "dispositivo_id"),
-        @Index(name = "idx_sync_log_data_sync",      columnList = "contrato_id, data_sync")
-    }
+        name = "sync_log",
+        indexes = {
+                @Index(name = "idx_sync_log_empresa_id",    columnList = "empresa_id"),
+                @Index(name = "idx_sync_log_dispositivo_id", columnList = "dispositivo_id"),
+                @Index(name = "idx_sync_log_data_sync",      columnList = "empresa_id, data_sync")
+        }
 )
 @Getter
 @Setter
@@ -29,8 +29,8 @@ public class SyncLog {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "contrato_id", nullable = false)
-    private Contrato contrato;
+    @JoinColumn(name = "empresa_id", nullable = false)
+    private Empresa empresa;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "dispositivo_id", nullable = false)
@@ -53,4 +53,11 @@ public class SyncLog {
 
     @Column(name = "mensagem_erro", columnDefinition = "TEXT")
     private String mensagemErro;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.dataSync == null) {
+            this.dataSync = LocalDateTime.now();
+        }
+    }
 }

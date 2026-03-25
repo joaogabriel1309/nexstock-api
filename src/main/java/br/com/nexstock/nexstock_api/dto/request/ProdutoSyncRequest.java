@@ -17,6 +17,9 @@ public class ProdutoSyncRequest {
     @NotNull(message = "ID do produto é obrigatório")
     private UUID id;
 
+    @NotNull(message = "ID da empresa é obrigatório para sincronização")
+    private UUID empresaId;
+
     @NotBlank(message = "Nome é obrigatório")
     @Size(max = 255)
     private String nome;
@@ -31,9 +34,8 @@ public class ProdutoSyncRequest {
     @NotNull(message = "atualizadoEm é obrigatório")
     private LocalDateTime atualizadoEm;
 
-    @NotNull(message = "versao é obrigatória")
+    @NotNull(message = "versão é obrigatória para controle de concorrência otimista")
     private Long versao;
 
-    @NotNull(message = "deletado é obrigatório")
-    private Boolean deletado;
+    private LocalDateTime deletadoEm;
 }

@@ -5,13 +5,11 @@ import br.com.nexstock.nexstock_api.dto.response.ProdutoResponse;
 import br.com.nexstock.nexstock_api.service.ProdutoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,47 +23,41 @@ public class ProdutoController {
     @PostMapping
     public ResponseEntity<ProdutoResponse> criar(@RequestBody @Valid ProdutoRequest request) {
         ProdutoResponse response = produtoService.criar(request);
+
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(response.getId()).toUri();
+
         return ResponseEntity.created(location).body(response);
     }
 
-    @GetMapping("/contrato/{contratoId}")
-    public ResponseEntity<List<ProdutoResponse>> listar(
-            @PathVariable UUID contratoId,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime atualizadoDepois) {
-
-        if (atualizadoDepois != null) {
-            return ResponseEntity.ok(produtoService.listarParaSync(contratoId, atualizadoDepois));
-        }
-
-        return ResponseEntity.ok(produtoService.listarAtivos(contratoId));
+    @GetMapping
+    public ResponseEntity<List<ProdutoResponse>> listarAtivos(@RequestParam UUID empresaId) {
+        return ResponseEntity.ok(produtoService.listarAtivos(empresaId));
     }
 
-    @GetMapping("/contrato/{contratoId}/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<ProdutoResponse> buscarPorId(
-            @PathVariable UUID contratoId,
+            @RequestParam UUID empresaId,
             @PathVariable UUID id) {
-        return ResponseEntity.ok(produtoService.buscarPorId(contratoId, id));
+        ProdutoResponse response = produtoService.buscarPorId(empresaId, id);
+        return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/contrato/{contratoId}/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<ProdutoResponse> atualizar(
-            @PathVariable UUID contratoId,
+            @RequestParam UUID empresaId,
             @PathVariable UUID id,
             @RequestBody @Valid ProdutoRequest request) {
-        return ResponseEntity.ok(produtoService.atualizar(contratoId, id, request));
+        return ResponseEntity.ok(produtoService.atualizar(empresaId, id, request));
     }
 
-    @DeleteMapping("/contrato/{contratoId}/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(
-            @PathVariable UUID contratoId,
+            @RequestParam UUID empresaId,
             @PathVariable UUID id,
             @RequestParam UUID dispositivoId) {
-        produtoService.deletar(contratoId, id, dispositivoId);
+        produtoService.deletar(empresaId, id, dispositivoId);
         return ResponseEntity.noContent().build();
     }
 }
