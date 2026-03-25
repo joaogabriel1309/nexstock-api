@@ -23,21 +23,29 @@ public class DispositivoController {
     @PostMapping
     public ResponseEntity<DispositivoResponse> registrar(@RequestBody @Valid DispositivoRequest request) {
         DispositivoResponse response = dispositivoService.registrar(request);
+
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(response.getId()).toUri();
+
         return ResponseEntity.created(location).body(response);
     }
 
-    @GetMapping("/contrato/{contratoId}")
-    public ResponseEntity<List<DispositivoResponse>> listarPorContrato(@PathVariable UUID contratoId) {
-        return ResponseEntity.ok(dispositivoService.listarPorContrato(contratoId));
+    @GetMapping("/empresa/{empresaId}")
+    public ResponseEntity<List<DispositivoResponse>> listarPorEmpresa(@PathVariable UUID empresaId) {
+        return ResponseEntity.ok(dispositivoService.listarPorEmpresa(empresaId));
     }
 
-    @GetMapping("/contrato/{contratoId}/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<DispositivoResponse> buscarPorId(
-            @PathVariable UUID contratoId,
+            @RequestParam UUID empresaId,
             @PathVariable UUID id) {
-        return ResponseEntity.ok(dispositivoService.buscarPorId(contratoId, id));
+        return ResponseEntity.ok(DispositivoResponse.from(dispositivoService.buscarEntidade(empresaId, id)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> remover(@RequestParam UUID empresaId, @PathVariable UUID id) {
+        dispositivoService.remover(empresaId, id);
+        return ResponseEntity.noContent().build();
     }
 }

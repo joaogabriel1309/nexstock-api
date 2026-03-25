@@ -4,7 +4,6 @@ import br.com.nexstock.nexstock_api.IntegrationTestBase;
 import br.com.nexstock.nexstock_api.domain.entity.*;
 import br.com.nexstock.nexstock_api.domain.enums.Role;
 import br.com.nexstock.nexstock_api.domain.enums.StatusContrato;
-import br.com.nexstock.nexstock_api.dto.response.ClienteResponse;
 import br.com.nexstock.nexstock_api.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

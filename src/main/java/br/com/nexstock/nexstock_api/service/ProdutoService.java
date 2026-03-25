@@ -83,6 +83,13 @@ public class ProdutoService {
     }
 
     @Transactional(readOnly = true)
+    public ProdutoResponse buscarPorId(UUID empresaId, UUID produtoId) {
+        return produtoRepository.findByIdAndEmpresaIdAndDeletadoEmIsNull(produtoId, empresaId)
+                .map(ProdutoResponse::from)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Produto", produtoId));
+    }
+
+    @Transactional(readOnly = true)
     public List<ProdutoResponse> listarAtivos(UUID empresaId) {
         return produtoRepository.findAllByEmpresaIdAndDeletadoEmIsNull(empresaId)
                 .stream()

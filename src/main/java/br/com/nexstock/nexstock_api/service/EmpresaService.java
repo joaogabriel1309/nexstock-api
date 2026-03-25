@@ -69,6 +69,15 @@ public class EmpresaService {
         return EmpresaResponse.from(empresaRepository.save(empresa));
     }
 
+    @Transactional(readOnly = true)
+    public List<EmpresaResponse> listarTodas() {
+        log.info("Buscando todas as empresas cadastradas no sistema.");
+        return empresaRepository.findAll()
+                .stream()
+                .map(EmpresaResponse::from)
+                .toList();
+    }
+
     @Transactional
     public void desativar(UUID id) {
         Empresa empresa = buscarEntidade(id);

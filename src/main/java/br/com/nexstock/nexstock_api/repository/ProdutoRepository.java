@@ -18,6 +18,10 @@ public interface ProdutoRepository extends JpaRepository<Produto, UUID> {
 
     Optional<Produto> findByIdAndEmpresaId(UUID id, UUID empresaId);
 
+    Optional<Produto> findByIdAndEmpresaIdAndDeletadoEmIsNull(UUID id, UUID empresaId);
+
+    boolean existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull(String codigoBarras, UUID empresaId);
+
     @Query("""
         SELECT p FROM Produto p
         WHERE p.empresa.id = :empresaId
