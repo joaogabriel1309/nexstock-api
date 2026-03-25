@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface PlanoRepository extends JpaRepository<Plano, UUID> {
 
-    List<Plano> findAllByAtivoTrue();
+    List<Plano> findByAtivoTrueOrderByPrecoAsc();
 }
