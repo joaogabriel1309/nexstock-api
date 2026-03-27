@@ -19,8 +19,8 @@ public class SetupRequest {
     @Size(max = 200)
     private String empresaNome;
 
-    @Size(max = 20)
-    @Email
+    @NotBlank(message = "O e-mail é obrigatório")
+    @Email(message = "Por favor, insira um e-mail válido")
     private String empresaEmail;
 
     @NotBlank(message = "CPF/CNPJ é obrigatória")
