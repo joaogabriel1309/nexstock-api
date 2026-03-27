@@ -1,5 +1,4 @@
 services:
-
   postgres:
     image: postgres:17-alpine
     container_name: nexstock-postgres-dev
@@ -17,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - nexstock-net
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -25,11 +26,18 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@nexstock.com
       PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - "5050:80"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - nexstock-net
+
+networks:
+  nexstock-net:
+    driver: bridge
 
 volumes:
   postgres_dev_data:
