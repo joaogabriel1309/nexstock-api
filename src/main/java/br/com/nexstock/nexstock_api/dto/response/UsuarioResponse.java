@@ -6,7 +6,6 @@ import lombok.*;
 
 import java.util.UUID;
 
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +18,9 @@ public class UsuarioResponse {
     private String email;
     private Role role;
 
-    private static UsuarioResponse from(Usuario usuario){
+    public static UsuarioResponse from(Usuario usuario){
+        if (usuario == null) return null;
+
         return UsuarioResponse.builder()
                 .id(usuario.getId())
                 .empresaId(usuario.getEmpresa().getId())
