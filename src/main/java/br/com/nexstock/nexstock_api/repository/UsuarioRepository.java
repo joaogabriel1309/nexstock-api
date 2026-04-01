@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
     List<Usuario> findAllByEmpresaIdAndDeletadoEmIsNull(UUID empresaId);
 
+    Optional<Usuario> findByEmailAndDeletadoEmIsNull(String email);
+
     Optional<Usuario> findByIdAndEmpresaIdAndDeletadoEmIsNull(UUID id, UUID empresaId);
 
     Optional<Usuario> findByEmail(String email);
