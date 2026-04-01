@@ -36,6 +36,13 @@ public class DispositivoController {
         return ResponseEntity.ok(dispositivoService.listarPorEmpresa(empresaId));
     }
 
+    @GetMapping("/{empresaId}/{usuarioId}")
+    public ResponseEntity<List<DispositivoResponse>> listarTodosPorUsuario(
+            @PathVariable UUID empresaId,
+            @PathVariable UUID usuarioId) {
+        return ResponseEntity.ok(dispositivoService.listarPorUsuario(empresaId, usuarioId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DispositivoResponse> buscarPorId(
             @RequestParam UUID empresaId,
