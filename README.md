@@ -1688,34 +1688,98 @@ Todas as rotas estão sob o prefixo `/api`, preparadas para versionamento futuro
 
 ### Roadmap
 
+## 🚀 Funcionalidades de Negócio
+
 - [ ] Implementar paginação nos endpoints de listagem: Utilizar Pageable do Spring Data JPA para evitar sobrecarga de memória e melhorar a performance no carregamento de grandes volumes de produtos e empresas.
 - [ ] Adicionar filtros avançados de busca: Implementar buscas dinâmicas utilizando Spring Data Specifications ou QueryDSL, permitindo filtrar produtos por nome, categoria, faixa de preço e status simultaneamente.
 - [ ] Implementar relatórios de estoque: Geração de documentos em PDF ou CSV (utilizando JasperReports ou Apache POI) para fechamento de inventário e análise de movimentações mensais.
-- [ ] Adicionar suporte a upload de imagens de produtos: Integração com serviços de Storage (como AWS S3, Google Cloud Storage ou local) para vincular fotos reais aos itens do catálogo via multipart/form-data.
-- [ ] Implementar notificações push: Integração com Firebase Cloud Messaging (FCM) para alertar dispositivos mobile (Flutter) sobre estoque baixo, vencimento de contratos ou novos produtos sincronizados.
 - [ ] Adicionar dashboard de métricas: Exposição de métricas de negócio via endpoints customizados para alimentar gráficos de vendas, produtos mais movimentados e saúde dos PDVs.
-- [ ] Implementar auditoria de ações (Audit Log): Utilizar Hibernate Envers para registrar o histórico completo de alterações ("Quem alterou", "Quando" e "O que") em tabelas críticas como Produtos e Contratos.
-- [ ] Suporte a múltiplos idiomas (i18n): Configurar MessageSource e LocaleResolver para internacionalizar mensagens de erro e respostas da API, preparando o sistema para o mercado global.
-- [ ] Rate Limiting por API Key/Empresa: Implementar Bucket4j para evitar abusos nos endpoints de Sync e Login.
-- [ ] Circuit Breaker com Resilience4j: Proteger a API de falhas em cascata, especialmente em chamadas externas ou processos pesados de banco.
-- [ ] CORS Policy Restrito: Configurar permissões apenas para os domínios oficiais do seu Angular e Flutter.
+- [ ] Exportação de Dados (CSV/Excel): Facilitar a migração de dados e relatórios para os donos de empresas.
+
+---
+
+## 📦 Gestão de Produtos e Mídia
+
+- [ ] Adicionar suporte a upload de imagens de produtos: Integração com serviços de Storage (como AWS S3, Google Cloud Storage ou local) para vincular fotos reais aos itens do catálogo via multipart/form-data.
+- [ ] Soft Delete Global: Garantir que nada seja deletado fisicamente do banco sem rastro (usando filtros automáticos do Hibernate).
+
+---
+
+## 🔔 Comunicação e Notificações
+
+- [ ] Implementar notificações push: Integração com Firebase Cloud Messaging (FCM) para alertar dispositivos mobile (Flutter) sobre estoque baixo, vencimento de contratos ou novos produtos sincronizados.
+- [ ] Webhooks para Integrações: Notificar sistemas externos quando uma venda/sincronização for concluída.
+
+---
+
+## 🔐 Segurança e Autenticação
+
 - [ ] Implementar Refresh Token: Evitar que o usuário precise logar todo dia, mantendo a segurança do JWT.
+- [ ] Rate Limiting por API Key/Empresa: Implementar Bucket4j para evitar abusos nos endpoints de Sync e Login.
+- [ ] CORS Policy Restrito: Configurar permissões apenas para os domínios oficiais do seu Angular e Flutter.
+
+---
+
+## ⚡ Performance e Escalabilidade
+
 - [ ] Cache de Segundo Nível com Redis: Cachear planos, perfis de usuário e produtos frequentes para reduzir latência.
 - [ ] Processamento Assíncrono com @Async: Mover tarefas pesadas (como envio de e-mails ou geração de logs complexos) para threads secundárias.
 - [ ] Compressão GZIP/Brotli: Ativar compressão nas respostas JSON para economizar banda no mobile (Flutter).
 - [ ] Database Connection Pooling: Otimizar o HikariCP para suportar picos de conexões simultâneas de múltiplos Dispositivos.
+
+---
+
+## 🛡️ Resiliência e Confiabilidade
+
+- [ ] Circuit Breaker com Resilience4j: Proteger a API de falhas em cascata, especialmente em chamadas externas ou processos pesados de banco.
+- [ ] Health Check Avançado: Verificar se o Redis e o Sistema de Arquivos (Imagens) estão operacionais, além do Postgres.
+
+---
+
+## 📊 Observabilidade e Monitoramento
+
 - [ ] Centralização de Logs com ELK ou Loki: Parar de ler arquivos .log e usar uma interface de busca de erros.
 - [ ] Distributed Tracing (Micrometer Tracing): Rastrear o caminho completo de uma requisição de Sync do início ao fim.
 - [ ] Métricas Customizadas no Actuator: Expor quantos produtos estão sendo sincronizados por minuto para o Prometheus/Grafana.
-- [ ] Health Check Avançado: Verificar se o Redis e o Sistema de Arquivos (Imagens) estão operacionais, além do Postgres.
+
+---
+
+## 🧪 Qualidade e Padronização
+
 - [ ] Padronização RFC 9457 (Problem Details): Retornar erros em um formato JSON padrão de mercado (type, title, detail, instance).
 - [ ] Documentação Interativa com Swagger/OpenAPI: Refinar as descrições dos modelos e exemplos de Request/Response no Swagger UI.
 - [ ] Testes de Integração com Testcontainers: Garantir que o código funciona com um banco Postgres real durante o build.
 - [ ] Checkstyle / SonarLint: Automatizar a verificação de padrões de código Java Sênior no projeto.
+
+---
+
+## 🌍 Internacionalização
+
+- [ ] Suporte a múltiplos idiomas (i18n): Configurar MessageSource e LocaleResolver para internacionalizar mensagens de erro e respostas da API, preparando o sistema para o mercado global.
+
+---
+
+## 📜 Auditoria e Compliance
+
+- [ ] Implementar auditoria de ações (Audit Log): Utilizar Hibernate Envers para registrar o histórico completo de alterações ("Quem alterou", "Quando" e "O que") em tabelas críticas como Produtos e Contratos.
 - [ ] Auditoria de Entidades com Hibernate Envers: Manter histórico de "quem alterou o quê" em cada produto ou contrato.
-- [ ] Webhooks para Integrações: Notificar sistemas externos quando uma venda/sincronização for concluída.
-- [ ] Soft Delete Global: Garantir que nada seja deletado fisicamente do banco sem rastro (usando filtros automáticos do Hibernate).
-- [ ] Exportação de Dados (CSV/Excel): Facilitar a migração de dados e relatórios para os donos de empresas.
+
+---
+
+## 🤖 Inteligência Artificial (IA)
+
+- [ ] Implementar previsão inteligente de estoque: Utilizar análise de histórico de movimentações para prever demanda e evitar ruptura de estoque.
+- [ ] Adicionar recomendação de compra inteligente: Sugerir automaticamente quais produtos comprar e em qual quantidade com base no histórico e previsões.
+- [ ] Criar sistema de alertas inteligentes: Detectar padrões anormais como picos de venda, produtos parados ou comportamento inesperado.
+- [ ] Implementar assistente virtual (AI Chat): Permitir consultas em linguagem natural como "quais produtos mais vendem?" ou "qual meu faturamento?".
+- [ ] Gerar insights automáticos de negócio: Analisar dados e retornar recomendações estratégicas para o usuário.
+- [ ] Implementar sugestão automática de cadastro de produtos: Preencher nome, categoria e descrição com base em entrada simples.
+- [ ] Criar categorização automática de produtos: Classificar produtos automaticamente utilizando IA.
+- [ ] Implementar detecção de anomalias: Identificar movimentações suspeitas ou inconsistentes.
+- [ ] Criar score de saúde do estoque: Gerar uma pontuação baseada em giro, excesso e ruptura de produtos.
+- [ ] Implementar personalização por empresa (multi-tenant AI): Adaptar recomendações com base no comportamento de cada empresa.
+- [ ] Criar histórico de aprendizado da IA: Melhorar previsões com base em decisões passadas.
+- [ ] Implementar API de IA desacoplada: Criar módulo ou microserviço separado para evolução independente da inteligência artificial.
 
 ---
 
