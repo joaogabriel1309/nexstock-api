@@ -16,7 +16,6 @@ public class ProdutoRequest {
     @NotNull(message = "O ID da empresa é obrigatório")
     private UUID empresaId;
 
-    @NotNull(message = "O ID do dispositivo é obrigatório")
     private UUID dispositivoId;
 
     @NotBlank(message = "O nome do produto é obrigatório")

@@ -32,8 +32,6 @@ public class ProdutoService {
         var empresa = empresaRepository.findById(request.getEmpresaId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empresa", request.getEmpresaId()));
 
-        Dispositivo dispositivo = dispositivoService.buscarEntidade(empresa.getId(), request.getDispositivoId());
-
         validarCodigoBarras(request.getCodigoBarras(), empresa.getId(), null);
 
         Produto produto = Produto.builder()
@@ -43,7 +41,6 @@ public class ProdutoService {
                 .estoque(request.getEstoque())
                 .atualizadoEm(LocalDateTime.now())
                 .versao(1L)
-                .dispositivoUltimaAlteracao(dispositivo)
                 .build();
 
         return ProdutoResponse.from(produtoRepository.save(produto));
@@ -53,8 +50,6 @@ public class ProdutoService {
     public ProdutoResponse atualizar(UUID empresaId, UUID id, ProdutoRequest request) {
         Produto produto = buscarEntidadeAtiva(empresaId, id);
 
-        Dispositivo dispositivo = dispositivoService.buscarEntidade(empresaId, request.getDispositivoId());
-
         validarCodigoBarras(request.getCodigoBarras(), empresaId, id);
 
         produto.setNome(request.getNome());
@@ -62,20 +57,16 @@ public class ProdutoService {
         produto.setEstoque(request.getEstoque());
         produto.setVersao(produto.getVersao() + 1);
         produto.setAtualizadoEm(LocalDateTime.now());
-        produto.setDispositivoUltimaAlteracao(dispositivo);
 
         return ProdutoResponse.from(produtoRepository.save(produto));
     }
 
     @Transactional
-    public void deletar(UUID empresaId, UUID id, UUID dispositivoId) {
+    public void deletar(UUID empresaId, UUID id) {
         Produto produto = buscarEntidadeAtiva(empresaId, id);
-
-        Dispositivo dispositivo = dispositivoService.buscarEntidade(empresaId, dispositivoId);
 
         produto.setDeletadoEm(LocalDateTime.now());
         produto.setVersao(produto.getVersao() + 1);
-        produto.setDispositivoUltimaAlteracao(dispositivo);
 
         produtoRepository.save(produto);
 

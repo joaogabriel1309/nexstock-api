@@ -55,9 +55,8 @@ public class ProdutoController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(
             @RequestParam UUID empresaId,
-            @PathVariable UUID id,
-            @RequestParam UUID dispositivoId) {
-        produtoService.deletar(empresaId, id, dispositivoId);
+            @PathVariable UUID id) {
+        produtoService.deletar(empresaId, id);
         return ResponseEntity.noContent().build();
     }
 }
