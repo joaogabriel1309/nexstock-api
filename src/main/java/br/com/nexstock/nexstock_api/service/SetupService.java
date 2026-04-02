@@ -5,12 +5,16 @@ import br.com.nexstock.nexstock_api.domain.enums.Role;
 import br.com.nexstock.nexstock_api.dto.request.EmpresaRequest;
 import br.com.nexstock.nexstock_api.dto.request.SetupRequest;
 import br.com.nexstock.nexstock_api.dto.response.EmpresaResponse;
+import br.com.nexstock.nexstock_api.dto.response.LoginResponse;
+import br.com.nexstock.nexstock_api.repository.DispositivoRepository;
 import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
 import br.com.nexstock.nexstock_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +24,7 @@ public class SetupService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmpresaRepository empresaRepository;
+    private final DispositivoRepository dispositivoRepository;
 
     @Transactional
     public void realizarSetup(SetupRequest dto) {
@@ -42,6 +47,16 @@ public class SetupService {
                 .empresa(empresaEntity)
                 .ativo(true)
                 .build();
+
+        Dispositivo dispositivoInicial = Dispositivo.builder()
+                .nome("Acesso Inicial (Setup)")
+                .empresa(empresaEntity)
+                .sistema("Web admin")
+                .usuario(admin)
+                .ultimoSync(LocalDateTime.now())
+                .build();
+
+        dispositivoRepository.save(dispositivoInicial);
 
         usuarioRepository.save(admin);
     }

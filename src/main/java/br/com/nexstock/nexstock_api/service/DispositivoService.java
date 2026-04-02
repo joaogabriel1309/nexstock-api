@@ -62,6 +62,16 @@ public class DispositivoService {
     }
 
     @Transactional(readOnly = true)
+    public List<DispositivoResponse> listarPorUsuario(UUID empresaId, UUID usuarioId) {
+        log.info("Listando dispositivos do usuário {} da empresa {}", usuarioId, empresaId);
+
+        return dispositivoRepository.findAllByEmpresaIdAndUsuarioIdAndDeletadoEmIsNull(empresaId, usuarioId)
+                .stream()
+                .map(DispositivoResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<DispositivoResponse> listarPorEmpresa(UUID empresaId) {
         return dispositivoRepository.findAllByEmpresaId(empresaId)
                 .stream()

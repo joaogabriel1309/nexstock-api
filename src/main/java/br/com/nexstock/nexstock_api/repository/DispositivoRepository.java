@@ -11,6 +11,8 @@ import java.util.UUID;
 @Repository
 public interface DispositivoRepository extends JpaRepository<Dispositivo, UUID> {
 
+    List<Dispositivo> findAllByEmpresaIdAndUsuarioIdAndDeletadoEmIsNull(UUID empresaId, UUID usuarioId);
+
     List<Dispositivo> findAllByEmpresaId(UUID empresaId);
 
     Optional<Dispositivo> findByIdAndEmpresaId(UUID id, UUID empresaId);
