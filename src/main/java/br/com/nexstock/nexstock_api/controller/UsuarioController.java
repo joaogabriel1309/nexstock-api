@@ -40,7 +40,8 @@ public class UsuarioController {
             @RequestParam UUID empresaId,
             @PathVariable UUID id) {
 
-        usuarioService.deletarUsuario(id, empresaId);
+        usuarioService.deletarUsuario(empresaId, id);
+
         return ResponseEntity.noContent().build();
     }
 }
