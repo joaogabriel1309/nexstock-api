@@ -19,6 +19,8 @@ public class ProdutoResponse {
     private String nome;
     private String codigoBarras;
     private BigDecimal estoque;
+    private String imagemUrl;
+    private String imagemKey;
     private LocalDateTime atualizadoEm;
     private Long versao;
     private UUID dispositivoUltimaAlteracaoId;
@@ -33,6 +35,8 @@ public class ProdutoResponse {
                 .nome(produto.getNome())
                 .codigoBarras(produto.getCodigoBarras())
                 .estoque(produto.getEstoque())
+                .imagemUrl(produto.getImagemUrl())
+                .imagemKey(produto.getImagemKey())
                 .atualizadoEm(produto.getAtualizadoEm())
                 .versao(produto.getVersao())
                 .deletadoEm(produto.getDeletadoEm())
