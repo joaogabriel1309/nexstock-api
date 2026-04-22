@@ -15,6 +15,19 @@ jwt:
   secret: dGVzdGUtc2VjcmV0LWNoYXZlLXBhcmEtdGVzdGVzLW5leHN0b2NrLWFwaS10ZXN0ZQ==
   expiracao-ms: 86400000
 
+app:
+  storage:
+    max-file-size: 1MB
+    allowed-content-types:
+      - image/jpeg
+      - image/png
+      - image/webp
+    s3:
+      bucket: nexstock-test
+      region: us-east-2
+      public-base-url: https://cdn.test.local
+      product-images-prefix: produtos-test
+
 logging:
   level:
     root: WARN

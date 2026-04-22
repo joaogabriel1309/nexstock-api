@@ -2,6 +2,7 @@ package br.com.nexstock.nexstock_api.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -94,6 +95,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(erro(
             HttpStatus.BAD_GATEWAY, "Falha no upload",
             "Nao foi possivel enviar o arquivo. Tente novamente.", request, null
+        ));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErroResponse> handleAccessDenied(
+            AccessDeniedException ex, WebRequest request) {
+
+        log.warn("Acesso negado: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(erro(
+            HttpStatus.FORBIDDEN, "Acesso negado", ex.getMessage(), request, null
         ));
     }
 

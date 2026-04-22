@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.Authentication;
@@ -252,6 +253,23 @@ class AuthServiceTest {
             authService.registrar(request);
 
             verify(usuarioRepository, times(1)).save(any(Usuario.class));
+        }
+
+        @Test
+        @DisplayName("deve bloquear registro quando usuario autenticado nao e ADMIN")
+        void deveBloquearRegistroQuandoUsuarioAutenticadoNaoEAdmin() {
+            mockUsuarioLogado("operador@nexstock.com");
+            usuario.setRole(Role.OPERADOR);
+            when(usuarioRepository.findByEmail("operador@nexstock.com")).thenReturn(Optional.of(usuario));
+
+            var request = RegistroUsuarioRequest.builder()
+                    .empresaId(empresaId)
+                    .email("novo@nexstock.com")
+                    .build();
+
+            assertThatThrownBy(() -> authService.registrar(request))
+                    .isInstanceOf(AccessDeniedException.class);
+            verify(usuarioRepository, never()).save(any());
         }
     }
 }
