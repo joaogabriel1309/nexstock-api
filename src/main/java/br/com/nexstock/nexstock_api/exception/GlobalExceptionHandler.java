@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
@@ -72,6 +73,41 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("Erro de sincronização: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erro(
             HttpStatus.UNPROCESSABLE_ENTITY, "Erro de sincronização", ex.getMessage(), request, null
+        ));
+    }
+
+    @ExceptionHandler(ArquivoInvalidoException.class)
+    public ResponseEntity<ErroResponse> handleArquivoInvalido(
+            ArquivoInvalidoException ex, WebRequest request) {
+
+        log.warn("Arquivo invalido: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro(
+            HttpStatus.BAD_REQUEST, "Arquivo invalido", ex.getMessage(), request, null
+        ));
+    }
+
+    @ExceptionHandler(FalhaUploadException.class)
+    public ResponseEntity<ErroResponse> handleFalhaUpload(
+            FalhaUploadException ex, WebRequest request) {
+
+        log.error("Falha no upload: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(erro(
+            HttpStatus.BAD_GATEWAY, "Falha no upload",
+            "Nao foi possivel enviar o arquivo. Tente novamente.", request, null
+        ));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        log.warn("Upload excedeu o tamanho maximo permitido");
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(erro(
+            HttpStatus.PAYLOAD_TOO_LARGE, "Arquivo muito grande",
+            "O arquivo enviado excede o tamanho maximo permitido.", request, null
         ));
     }
 
