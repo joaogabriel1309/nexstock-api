@@ -40,12 +40,7 @@ class ContratoControllerIT extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        usuarioRepository.deleteAll();
-        contratoRepository.deleteAll();
-        empresaRepository.deleteAll();
-        planoRepository.deleteAll();
-        usuarioRepository.flush();
-        empresaRepository.flush();
+        limparBanco();
 
         plano = planoRepository.save(Plano.builder()
                 .nome("Plano Premium")

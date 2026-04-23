@@ -34,10 +34,7 @@ class AuthControllerIT extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        usuarioRepository.deleteAllInBatch();
-        empresaRepository.deleteAllInBatch();
-        contratoRepository.deleteAllInBatch();
-        planoRepository.deleteAllInBatch();
+        limparBanco();
 
         Plano plano = planoRepository.save(Plano.builder()
                 .nome("Plano Test")
@@ -204,7 +201,7 @@ class AuthControllerIT extends IntegrationTestBase {
         var novoUsuario = Map.of(
                 "nome", "Outro Operador",
                 "email", "outro@nexstock.com",
-                "senha", "123",
+                "senha", "senha123",
                 "empresaId", empresa.getId().toString()
         );
 

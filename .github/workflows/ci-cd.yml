@@ -30,11 +30,18 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Executar testes
-        run: mvn clean test
+      - name: Executar testes e cobertura
+        run: mvn clean verify
+
+      - name: Upload do relatÃ³rio de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
+          retention-days: 7
 
       - name: Build do JAR
-        run: mvn clean install -DskipTests
+        run: mvn package -DskipTests
 
       - name: Upload do JAR como artefato
         uses: actions/upload-artifact@v4

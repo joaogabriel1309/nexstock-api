@@ -11,6 +11,7 @@ import br.com.nexstock.nexstock_api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,10 @@ public class AuthService {
     @Transactional
     public LoginResponse registrar(RegistroUsuarioRequest request) {
         Usuario adminLogado = getUsuarioAutenticado();
+
+        if (adminLogado.getRole() != Role.ADMIN) {
+            throw new AccessDeniedException("Apenas administradores podem registrar usuarios.");
+        }
 
         if (!adminLogado.getEmpresa().getId().equals(request.getEmpresaId())) {
             throw new RegraDeNegocioException("Você não tem permissão para registrar usuários em outra empresa.");
