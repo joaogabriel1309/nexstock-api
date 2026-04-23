@@ -1,12 +1,15 @@
 package br.com.nexstock.nexstock_api.controller;
 
 import br.com.nexstock.nexstock_api.dto.request.ProdutoRequest;
+import br.com.nexstock.nexstock_api.dto.response.ProdutoImagemResponse;
 import br.com.nexstock.nexstock_api.dto.response.ProdutoResponse;
 import br.com.nexstock.nexstock_api.service.ProdutoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -50,6 +53,14 @@ public class ProdutoController {
             @PathVariable UUID id,
             @RequestBody @Valid ProdutoRequest request) {
         return ResponseEntity.ok(produtoService.atualizar(empresaId, id, request));
+    }
+
+    @PostMapping(value = "/{id}/imagem", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProdutoImagemResponse> uploadImagem(
+            @RequestParam UUID empresaId,
+            @PathVariable UUID id,
+            @RequestPart("arquivo") MultipartFile arquivo) {
+        return ResponseEntity.ok(produtoService.uploadImagem(empresaId, id, arquivo));
     }
 
     @DeleteMapping("/{id}")

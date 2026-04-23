@@ -28,6 +28,12 @@ spring:
       fail-on-unknown-properties: false
     time-zone: UTC
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:5MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:6MB}
+
 server:
   port: ${PORT:8080}
   servlet:
@@ -43,3 +49,16 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET:changeme-substituir-em-prod}
   expiracao-ms: ${JWT_EXPIRACAO_MS:86400000}
+
+app:
+  storage:
+    max-file-size: ${STORAGE_MAX_FILE_SIZE:5MB}
+    allowed-content-types:
+      - image/jpeg
+      - image/png
+      - image/webp
+    s3:
+      bucket: ${AWS_S3_BUCKET:nexstock-dev}
+      region: ${AWS_REGION:sa-east-1}
+      public-base-url: ${AWS_S3_PUBLIC_BASE_URL:}
+      product-images-prefix: ${AWS_S3_PRODUCT_IMAGES_PREFIX:produtos}

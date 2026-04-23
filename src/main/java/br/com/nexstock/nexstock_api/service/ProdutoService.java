@@ -4,15 +4,18 @@ import br.com.nexstock.nexstock_api.domain.entity.Contrato;
 import br.com.nexstock.nexstock_api.domain.entity.Dispositivo;
 import br.com.nexstock.nexstock_api.domain.entity.Produto;
 import br.com.nexstock.nexstock_api.dto.request.ProdutoRequest;
+import br.com.nexstock.nexstock_api.dto.response.ProdutoImagemResponse;
 import br.com.nexstock.nexstock_api.dto.response.ProdutoResponse;
 import br.com.nexstock.nexstock_api.exception.RegraDeNegocioException;
 import br.com.nexstock.nexstock_api.exception.RecursoNaoEncontradoException;
 import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
 import br.com.nexstock.nexstock_api.repository.ProdutoRepository;
+import br.com.nexstock.nexstock_api.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +29,7 @@ public class ProdutoService {
     private final ProdutoRepository produtoRepository;
     private final EmpresaRepository empresaRepository;
     private final DispositivoService dispositivoService;
+    private final StorageService storageService;
 
     @Transactional
     public ProdutoResponse criar(ProdutoRequest request) {
@@ -100,6 +104,32 @@ public class ProdutoService {
     public Produto buscarEntidadeAtiva(UUID empresaId, UUID id) {
         return produtoRepository.findByIdAndEmpresaIdAndDeletadoEmIsNull(id, empresaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto", id));
+    }
+
+    @Transactional
+    public ProdutoImagemResponse uploadImagem(UUID empresaId, UUID produtoId, MultipartFile arquivo) {
+        Produto produto = buscarEntidadeAtiva(empresaId, produtoId);
+
+        var upload = storageService.uploadProductImage(
+                arquivo,
+                empresaId.toString(),
+                produtoId.toString()
+        );
+
+        produto.setImagemUrl(upload.url());
+        produto.setImagemKey(upload.key());
+        produto.setVersao(produto.getVersao() + 1);
+        produto.setAtualizadoEm(LocalDateTime.now());
+
+        Produto salvo = produtoRepository.save(produto);
+
+        log.info("Imagem do produto {} atualizada na empresa {}", produtoId, empresaId);
+
+        return new ProdutoImagemResponse(
+                salvo.getId(),
+                salvo.getImagemUrl(),
+                salvo.getImagemKey()
+        );
     }
 
     private void validarCodigoBarras(String codigoBarras, UUID empresaId, UUID idExcluir) {

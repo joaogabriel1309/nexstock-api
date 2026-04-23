@@ -55,6 +55,12 @@ public class Produto {
     @Builder.Default
     private BigDecimal estoque = BigDecimal.ZERO;
 
+    @Column(name = "imagem_url")
+    private String imagemUrl;
+
+    @Column(name = "imagem_key", length = 500)
+    private String imagemKey;
+
     // Habilita o Optimistic Locking nativo do JPA
     @Version
     @Column(name = "versao", nullable = false)
