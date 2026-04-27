@@ -27,7 +27,9 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -70,8 +72,16 @@ class ProdutoControllerIT extends IntegrationTestBase {
         produto = produtoRepository.save(Produto.builder()
                 .empresa(empresa)
                 .nome("Arroz 5kg")
+                .sku("ARROZ-5KG")
                 .codigoBarras("7891000000001")
-                .estoque(BigDecimal.TEN)
+                .descricao("Produto teste")
+                .unidadeMedida("UN")
+                .precoCusto(BigDecimal.valueOf(10))
+                .precoVenda(BigDecimal.valueOf(15))
+                .estoqueAtual(BigDecimal.TEN)
+                .estoqueMinimo(BigDecimal.ONE)
+                .ativo(true)
+                .permiteVendaSemEstoque(false)
                 .versao(1L)
                 .build());
 
@@ -82,7 +92,6 @@ class ProdutoControllerIT extends IntegrationTestBase {
     @Test
     @DisplayName("POST /api/produtos/{id}/imagem deve salvar imagem do produto")
     void uploadImagem_deveSalvarImagemDoProduto() throws Exception {
-        // Arrange
         var file = new MockMultipartFile(
                 "arquivo", "produto.png", "image/png", "conteudo".getBytes());
         var upload = new StorageUploadResult(
@@ -93,7 +102,6 @@ class ProdutoControllerIT extends IntegrationTestBase {
                 any(), eq(empresa.getId().toString()), eq(produto.getId().toString())))
                 .thenReturn(upload);
 
-        // Act & Assert
         mockMvc.perform(multipart("/api/produtos/{id}/imagem", produto.getId())
                         .file(file)
                         .param("empresaId", empresa.getId().toString())
@@ -112,11 +120,9 @@ class ProdutoControllerIT extends IntegrationTestBase {
     @Test
     @DisplayName("POST /api/produtos/{id}/imagem deve retornar 404 quando produto nao existe")
     void uploadImagem_produtoInexistente_deveRetornar404() throws Exception {
-        // Arrange
         var file = new MockMultipartFile(
                 "arquivo", "produto.png", "image/png", "conteudo".getBytes());
 
-        // Act & Assert
         mockMvc.perform(multipart("/api/produtos/{id}/imagem", java.util.UUID.randomUUID())
                         .file(file)
                         .param("empresaId", empresa.getId().toString())
@@ -129,14 +135,12 @@ class ProdutoControllerIT extends IntegrationTestBase {
     @Test
     @DisplayName("POST /api/produtos/{id}/imagem deve retornar 400 para arquivo invalido")
     void uploadImagem_arquivoInvalido_deveRetornar400() throws Exception {
-        // Arrange
         var file = new MockMultipartFile(
                 "arquivo", "produto.gif", "image/gif", "gif".getBytes());
 
         when(storageService.uploadProductImage(any(), any(), any()))
                 .thenThrow(new ArquivoInvalidoException("Tipo de arquivo nao permitido."));
 
-        // Act & Assert
         mockMvc.perform(multipart("/api/produtos/{id}/imagem", produto.getId())
                         .file(file)
                         .param("empresaId", empresa.getId().toString())
@@ -148,14 +152,12 @@ class ProdutoControllerIT extends IntegrationTestBase {
     @Test
     @DisplayName("POST /api/produtos/{id}/imagem deve retornar 502 quando storage falha")
     void uploadImagem_falhaStorage_deveRetornar502() throws Exception {
-        // Arrange
         var file = new MockMultipartFile(
                 "arquivo", "produto.png", "image/png", "conteudo".getBytes());
 
         when(storageService.uploadProductImage(any(), any(), any()))
                 .thenThrow(new FalhaUploadException("Falha ao enviar imagem para o storage.", new RuntimeException()));
 
-        // Act & Assert
         mockMvc.perform(multipart("/api/produtos/{id}/imagem", produto.getId())
                         .file(file)
                         .param("empresaId", empresa.getId().toString())
@@ -167,11 +169,9 @@ class ProdutoControllerIT extends IntegrationTestBase {
     @Test
     @DisplayName("POST /api/produtos/{id}/imagem deve exigir autenticacao")
     void uploadImagem_semToken_deveRejeitar() throws Exception {
-        // Arrange
         var file = new MockMultipartFile(
                 "arquivo", "produto.png", "image/png", "conteudo".getBytes());
 
-        // Act & Assert
         mockMvc.perform(multipart("/api/produtos/{id}/imagem", produto.getId())
                         .file(file)
                         .param("empresaId", empresa.getId().toString())

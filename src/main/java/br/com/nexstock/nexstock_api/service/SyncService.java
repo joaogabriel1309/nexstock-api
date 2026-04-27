@@ -105,18 +105,29 @@ public class SyncService {
             Dispositivo dispositivo,
             List<ConflictInfoResponse> conflitos) {
 
-        Produto existente = produtoService.buscarEntidadeAtiva(empresa.getId(), dto.getId());
+        Produto existente = produtoService.buscarEntidadeInclusoDeletados(empresa.getId(), dto.getId());
 
         if (existente == null) {
             Produto novo = Produto.builder()
                     .id(dto.getId())
                     .empresa(empresa)
                     .nome(dto.getNome())
+                    .sku(dto.getSku())
                     .codigoBarras(dto.getCodigoBarras())
-                    .estoque(dto.getEstoque())
+                    .descricao(dto.getDescricao())
+                    .unidadeMedida(dto.getUnidadeMedida())
+                    .precoCusto(dto.getPrecoCusto())
+                    .precoVenda(dto.getPrecoVenda())
+                    .precoVendaAtacado(dto.getPrecoVendaAtacado())
+                    .estoqueAtual(dto.getEstoqueAtual())
+                    .estoqueMinimo(dto.getEstoqueMinimo())
+                    .estoqueMaximo(dto.getEstoqueMaximo())
+                    .ativo(dto.getAtivo())
+                    .permiteVendaSemEstoque(dto.getPermiteVendaSemEstoque())
                     .atualizadoEm(dto.getAtualizadoEm())
                     .versao(1L)
                     .dispositivoUltimaAlteracao(dispositivo)
+                    .deletadoEm(dto.getDeletadoEm())
                     .build();
 
             produtoRepository.save(novo);
@@ -129,15 +140,23 @@ public class SyncService {
 
         if (clienteTs.isAfter(servidorTs)) {
             existente.setNome(dto.getNome());
+            existente.setSku(dto.getSku());
             existente.setCodigoBarras(dto.getCodigoBarras());
-            existente.setEstoque(dto.getEstoque());
+            existente.setDescricao(dto.getDescricao());
+            existente.setUnidadeMedida(dto.getUnidadeMedida());
+            existente.setPrecoCusto(dto.getPrecoCusto());
+            existente.setPrecoVenda(dto.getPrecoVenda());
+            existente.setPrecoVendaAtacado(dto.getPrecoVendaAtacado());
+            existente.setEstoqueAtual(dto.getEstoqueAtual());
+            existente.setEstoqueMinimo(dto.getEstoqueMinimo());
+            existente.setEstoqueMaximo(dto.getEstoqueMaximo());
+            existente.setAtivo(dto.getAtivo());
+            existente.setPermiteVendaSemEstoque(dto.getPermiteVendaSemEstoque());
             existente.setVersao(existente.getVersao() + 1);
             existente.setAtualizadoEm(clienteTs);
             existente.setDispositivoUltimaAlteracao(dispositivo);
 
-            if (dto.getDeletadoEm() != null) {
-                existente.setDeletadoEm(dto.getDeletadoEm());
-            }
+            existente.setDeletadoEm(dto.getDeletadoEm());
 
             produtoRepository.save(existente);
 

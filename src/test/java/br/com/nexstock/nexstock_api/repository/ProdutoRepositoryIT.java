@@ -36,14 +36,11 @@ class ProdutoRepositoryIT extends IntegrationTestBase {
     @Test
     @DisplayName("deve listar apenas produtos ativos da empresa")
     void deveListarApenasProdutosAtivosDaEmpresa() {
-        // Arrange
-        Produto ativo = produtoRepository.save(produto("Produto ativo", "7890000000001", null));
-        Produto deletado = produtoRepository.save(produto("Produto removido", "7890000000002", LocalDateTime.now()));
+        Produto ativo = produtoRepository.save(produto("Produto ativo", "SKU-ATIVO", "7890000000001", null));
+        Produto deletado = produtoRepository.save(produto("Produto removido", "SKU-REMOVIDO", "7890000000002", LocalDateTime.now()));
 
-        // Act
         var produtos = produtoRepository.findAllByEmpresaIdAndDeletadoEmIsNull(empresa.getId());
 
-        // Assert
         assertThat(produtos).extracting(Produto::getId).contains(ativo.getId());
         assertThat(produtos).extracting(Produto::getId).doesNotContain(deletado.getId());
     }
@@ -51,30 +48,41 @@ class ProdutoRepositoryIT extends IntegrationTestBase {
     @Test
     @DisplayName("deve identificar codigo de barras duplicado em outro produto")
     void deveIdentificarCodigoBarrasDuplicadoEmOutroProduto() {
-        // Arrange
-        Produto produtoA = produtoRepository.save(produto("Produto A", "7890000000001", null));
-        Produto produtoB = produtoRepository.save(Produto.builder()
-                .empresa(empresa)
-                .nome("Produto B")
-                .codigoBarras("7890000000002")
-                .estoque(BigDecimal.ONE)
-                .versao(1L)
-                .build());
+        Produto produtoA = produtoRepository.save(produto("Produto A", "SKU-A", "7890000000001", null));
+        Produto produtoB = produtoRepository.save(produto("Produto B", "SKU-B", "7890000000002", null));
 
-        // Act
         boolean duplicado = produtoRepository.existsCodigoBarrasEmOutroProduto(
                 empresa.getId(), produtoB.getCodigoBarras(), produtoA.getId());
 
-        // Assert
         assertThat(duplicado).isTrue();
     }
 
-    private Produto produto(String nome, String codigoBarras, LocalDateTime deletadoEm) {
+    @Test
+    @DisplayName("deve identificar sku duplicado em outro produto")
+    void deveIdentificarSkuDuplicadoEmOutroProduto() {
+        Produto produtoA = produtoRepository.save(produto("Produto A", "SKU-A", "7890000000001", null));
+        produtoRepository.save(produto("Produto B", "SKU-B", "7890000000002", null));
+
+        boolean duplicado = produtoRepository.existsSkuEmOutroProduto(
+                empresa.getId(), "SKU-B", produtoA.getId());
+
+        assertThat(duplicado).isTrue();
+    }
+
+    private Produto produto(String nome, String sku, String codigoBarras, LocalDateTime deletadoEm) {
         return Produto.builder()
                 .empresa(empresa)
                 .nome(nome)
+                .sku(sku)
                 .codigoBarras(codigoBarras)
-                .estoque(BigDecimal.ONE)
+                .descricao("Descricao " + nome)
+                .unidadeMedida("UN")
+                .precoCusto(BigDecimal.ONE)
+                .precoVenda(BigDecimal.TEN)
+                .estoqueAtual(BigDecimal.ONE)
+                .estoqueMinimo(BigDecimal.ZERO)
+                .ativo(true)
+                .permiteVendaSemEstoque(false)
                 .versao(1L)
                 .deletadoEm(deletadoEm)
                 .build();
