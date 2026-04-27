@@ -22,6 +22,8 @@ public interface ProdutoRepository extends JpaRepository<Produto, UUID> {
 
     boolean existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull(String codigoBarras, UUID empresaId);
 
+    boolean existsBySkuAndEmpresaIdAndDeletadoEmIsNull(String sku, UUID empresaId);
+
     @Query("""
         SELECT p FROM Produto p
         WHERE p.empresa.id = :empresaId
@@ -43,6 +45,19 @@ public interface ProdutoRepository extends JpaRepository<Produto, UUID> {
     boolean existsCodigoBarrasEmOutroProduto(
             @Param("empresaId") UUID empresaId,
             @Param("codigoBarras") String codigoBarras,
+            @Param("idExcluir") UUID idExcluir
+    );
+
+    @Query("""
+        SELECT COUNT(p) > 0 FROM Produto p
+        WHERE p.empresa.id = :empresaId
+        AND p.sku = :sku
+        AND p.id <> :idExcluir
+        AND p.deletadoEm IS NULL
+    """)
+    boolean existsSkuEmOutroProduto(
+            @Param("empresaId") UUID empresaId,
+            @Param("sku") String sku,
             @Param("idExcluir") UUID idExcluir
     );
 }
