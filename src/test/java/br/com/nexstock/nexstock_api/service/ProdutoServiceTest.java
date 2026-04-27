@@ -26,7 +26,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProdutoService")
@@ -60,8 +63,16 @@ class ProdutoServiceTest {
                 .id(produtoId)
                 .empresa(empresa)
                 .nome("Arroz 5kg")
+                .sku("ARROZ-5KG")
                 .codigoBarras("7891000000001")
-                .estoque(BigDecimal.TEN)
+                .descricao("Pacote tradicional")
+                .unidadeMedida("UN")
+                .precoCusto(BigDecimal.valueOf(10))
+                .precoVenda(BigDecimal.valueOf(15))
+                .estoqueAtual(BigDecimal.TEN)
+                .estoqueMinimo(BigDecimal.ONE)
+                .ativo(true)
+                .permiteVendaSemEstoque(false)
                 .versao(1L)
                 .build();
     }
@@ -71,17 +82,13 @@ class ProdutoServiceTest {
     class Criar {
 
         @Test
-        @DisplayName("deve criar produto quando codigo de barras nao existe")
+        @DisplayName("deve criar produto completo quando sku e codigo de barras nao existem")
         void deveCriarProdutoComSucesso() {
-            // Arrange
-            var request = ProdutoRequest.builder()
-                    .empresaId(empresaId)
-                    .nome("Feijao 1kg")
-                    .codigoBarras("7891000000002")
-                    .estoque(BigDecimal.valueOf(20))
-                    .build();
+            var request = requestBase();
 
             when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+            when(produtoRepository.existsBySkuAndEmpresaIdAndDeletadoEmIsNull(
+                    request.getSku(), empresaId)).thenReturn(false);
             when(produtoRepository.existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull(
                     request.getCodigoBarras(), empresaId)).thenReturn(false);
             when(produtoRepository.save(any(Produto.class))).thenAnswer(invocation -> {
@@ -90,33 +97,45 @@ class ProdutoServiceTest {
                 return salvo;
             });
 
-            // Act
             var response = produtoService.criar(request);
 
-            // Assert
-            assertThat(response.getNome()).isEqualTo("Feijao 1kg");
-            assertThat(response.getEmpresaId()).isEqualTo(empresaId);
+            assertThat(response.getNome()).isEqualTo(request.getNome());
+            assertThat(response.getSku()).isEqualTo(request.getSku());
+            assertThat(response.getPrecoCusto()).isEqualTo(request.getPrecoCusto());
+            assertThat(response.getEstoqueAtual()).isEqualTo(request.getEstoqueAtual());
+            assertThat(response.getStatusEstoque()).isEqualTo("NORMAL");
             verify(produtoRepository).save(any(Produto.class));
+        }
+
+        @Test
+        @DisplayName("deve bloquear sku duplicado na empresa")
+        void deveBloquearSkuDuplicado() {
+            var request = requestBase();
+
+            when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+            when(produtoRepository.existsBySkuAndEmpresaIdAndDeletadoEmIsNull(
+                    request.getSku(), empresaId)).thenReturn(true);
+
+            assertThatThrownBy(() -> produtoService.criar(request))
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("SKU");
+            verify(produtoRepository, never()).save(any());
         }
 
         @Test
         @DisplayName("deve bloquear codigo de barras duplicado na empresa")
         void deveBloquearCodigoBarrasDuplicado() {
-            // Arrange
-            var request = ProdutoRequest.builder()
-                    .empresaId(empresaId)
-                    .nome("Produto duplicado")
-                    .codigoBarras("7891000000001")
-                    .estoque(BigDecimal.ONE)
-                    .build();
+            var request = requestBase();
 
             when(empresaRepository.findById(empresaId)).thenReturn(Optional.of(empresa));
+            when(produtoRepository.existsBySkuAndEmpresaIdAndDeletadoEmIsNull(
+                    request.getSku(), empresaId)).thenReturn(false);
             when(produtoRepository.existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull(
                     request.getCodigoBarras(), empresaId)).thenReturn(true);
 
-            // Act & Assert
             assertThatThrownBy(() -> produtoService.criar(request))
-                    .isInstanceOf(RegraDeNegocioException.class);
+                    .isInstanceOf(RegraDeNegocioException.class)
+                    .hasMessageContaining("Codigo de barras");
             verify(produtoRepository, never()).save(any());
         }
     }
@@ -128,7 +147,6 @@ class ProdutoServiceTest {
         @Test
         @DisplayName("deve enviar imagem e persistir url e chave no produto")
         void deveEnviarImagemEPersistirUrlEChave() {
-            // Arrange
             var arquivo = new MockMultipartFile(
                     "arquivo", "produto.png", "image/png", "conteudo".getBytes());
             var upload = new StorageUploadResult(
@@ -141,10 +159,8 @@ class ProdutoServiceTest {
                     .thenReturn(upload);
             when(produtoRepository.save(any(Produto.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-            // Act
             var response = produtoService.uploadImagem(empresaId, produtoId, arquivo);
 
-            // Assert
             assertThat(response.produtoId()).isEqualTo(produtoId);
             assertThat(response.imagemUrl()).isEqualTo(upload.url());
             assertThat(response.imagemKey()).isEqualTo(upload.key());
@@ -155,17 +171,34 @@ class ProdutoServiceTest {
         @Test
         @DisplayName("deve falhar quando produto nao existe")
         void deveFalharQuandoProdutoNaoExiste() {
-            // Arrange
             var arquivo = new MockMultipartFile(
                     "arquivo", "produto.png", "image/png", "conteudo".getBytes());
             when(produtoRepository.findByIdAndEmpresaIdAndDeletadoEmIsNull(produtoId, empresaId))
                     .thenReturn(Optional.empty());
 
-            // Act & Assert
             assertThatThrownBy(() -> produtoService.uploadImagem(empresaId, produtoId, arquivo))
                     .isInstanceOf(RecursoNaoEncontradoException.class);
             verifyNoInteractions(storageService);
             verify(produtoRepository, never()).save(any());
         }
+    }
+
+    private ProdutoRequest requestBase() {
+        return ProdutoRequest.builder()
+                .empresaId(empresaId)
+                .nome("Feijao 1kg")
+                .sku("FEIJAO-1KG")
+                .codigoBarras("7891000000002")
+                .descricao("Pacote premium")
+                .unidadeMedida("UN")
+                .precoCusto(BigDecimal.valueOf(8.50))
+                .precoVenda(BigDecimal.valueOf(11.90))
+                .precoVendaAtacado(BigDecimal.valueOf(10.99))
+                .estoqueAtual(BigDecimal.valueOf(20))
+                .estoqueMinimo(BigDecimal.valueOf(5))
+                .estoqueMaximo(BigDecimal.valueOf(50))
+                .ativo(true)
+                .permiteVendaSemEstoque(false)
+                .build();
     }
 }
