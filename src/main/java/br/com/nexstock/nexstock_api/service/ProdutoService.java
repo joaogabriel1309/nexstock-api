@@ -1,7 +1,5 @@
 package br.com.nexstock.nexstock_api.service;
 
-import br.com.nexstock.nexstock_api.domain.entity.Contrato;
-import br.com.nexstock.nexstock_api.domain.entity.Dispositivo;
 import br.com.nexstock.nexstock_api.domain.entity.Produto;
 import br.com.nexstock.nexstock_api.dto.request.ProdutoRequest;
 import br.com.nexstock.nexstock_api.dto.response.ProdutoImagemResponse;
@@ -36,13 +34,25 @@ public class ProdutoService {
         var empresa = empresaRepository.findById(request.getEmpresaId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Empresa", request.getEmpresaId()));
 
+        validarSku(request.getSku(), empresa.getId(), null);
         validarCodigoBarras(request.getCodigoBarras(), empresa.getId(), null);
+        validarEstoqueMaximo(request.getEstoqueMinimo(), request.getEstoqueMaximo());
 
         Produto produto = Produto.builder()
                 .empresa(empresa)
                 .nome(request.getNome())
-                .codigoBarras(request.getCodigoBarras())
-                .estoque(request.getEstoque())
+                .sku(normalizarTexto(request.getSku()))
+                .codigoBarras(normalizarOpcional(request.getCodigoBarras()))
+                .descricao(normalizarOpcional(request.getDescricao()))
+                .unidadeMedida(normalizarTexto(request.getUnidadeMedida()))
+                .precoCusto(request.getPrecoCusto())
+                .precoVenda(request.getPrecoVenda())
+                .precoVendaAtacado(request.getPrecoVendaAtacado())
+                .estoqueAtual(request.getEstoqueAtual())
+                .estoqueMinimo(request.getEstoqueMinimo())
+                .estoqueMaximo(request.getEstoqueMaximo())
+                .ativo(request.getAtivo())
+                .permiteVendaSemEstoque(request.getPermiteVendaSemEstoque())
                 .atualizadoEm(LocalDateTime.now())
                 .versao(1L)
                 .build();
@@ -54,11 +64,23 @@ public class ProdutoService {
     public ProdutoResponse atualizar(UUID empresaId, UUID id, ProdutoRequest request) {
         Produto produto = buscarEntidadeAtiva(empresaId, id);
 
+        validarSku(request.getSku(), empresaId, id);
         validarCodigoBarras(request.getCodigoBarras(), empresaId, id);
+        validarEstoqueMaximo(request.getEstoqueMinimo(), request.getEstoqueMaximo());
 
         produto.setNome(request.getNome());
-        produto.setCodigoBarras(request.getCodigoBarras());
-        produto.setEstoque(request.getEstoque());
+        produto.setSku(normalizarTexto(request.getSku()));
+        produto.setCodigoBarras(normalizarOpcional(request.getCodigoBarras()));
+        produto.setDescricao(normalizarOpcional(request.getDescricao()));
+        produto.setUnidadeMedida(normalizarTexto(request.getUnidadeMedida()));
+        produto.setPrecoCusto(request.getPrecoCusto());
+        produto.setPrecoVenda(request.getPrecoVenda());
+        produto.setPrecoVendaAtacado(request.getPrecoVendaAtacado());
+        produto.setEstoqueAtual(request.getEstoqueAtual());
+        produto.setEstoqueMinimo(request.getEstoqueMinimo());
+        produto.setEstoqueMaximo(request.getEstoqueMaximo());
+        produto.setAtivo(request.getAtivo());
+        produto.setPermiteVendaSemEstoque(request.getPermiteVendaSemEstoque());
         produto.setVersao(produto.getVersao() + 1);
         produto.setAtualizadoEm(LocalDateTime.now());
 
@@ -106,6 +128,11 @@ public class ProdutoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto", id));
     }
 
+    @Transactional(readOnly = true)
+    public Produto buscarEntidadeInclusoDeletados(UUID empresaId, UUID id) {
+        return produtoRepository.findByIdAndEmpresaId(id, empresaId).orElse(null);
+    }
+
     @Transactional
     public ProdutoImagemResponse uploadImagem(UUID empresaId, UUID produtoId, MultipartFile arquivo) {
         Produto produto = buscarEntidadeAtiva(empresaId, produtoId);
@@ -132,15 +159,47 @@ public class ProdutoService {
         );
     }
 
-    private void validarCodigoBarras(String codigoBarras, UUID empresaId, UUID idExcluir) {
-        if (codigoBarras == null || codigoBarras.isBlank()) return;
+    private void validarSku(String sku, UUID empresaId, UUID idExcluir) {
+        String skuNormalizado = normalizarTexto(sku);
 
         boolean existe = (idExcluir == null)
-                ? produtoRepository.existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull(codigoBarras, empresaId)
-                : produtoRepository.existsCodigoBarrasEmOutroProduto(empresaId, codigoBarras, idExcluir);
+                ? produtoRepository.existsBySkuAndEmpresaIdAndDeletadoEmIsNull(skuNormalizado, empresaId)
+                : produtoRepository.existsSkuEmOutroProduto(empresaId, skuNormalizado, idExcluir);
 
         if (existe) {
-            throw new RegraDeNegocioException("Código de barras '" + codigoBarras + "' já cadastrado nesta empresa.");
+            throw new RegraDeNegocioException("SKU '" + skuNormalizado + "' ja cadastrado nesta empresa.");
         }
+    }
+
+    private void validarCodigoBarras(String codigoBarras, UUID empresaId, UUID idExcluir) {
+        String codigoNormalizado = normalizarOpcional(codigoBarras);
+        if (codigoNormalizado == null) return;
+
+        boolean existe = (idExcluir == null)
+                ? produtoRepository.existsByCodigoBarrasAndEmpresaIdAndDeletadoEmIsNull(codigoNormalizado, empresaId)
+                : produtoRepository.existsCodigoBarrasEmOutroProduto(empresaId, codigoNormalizado, idExcluir);
+
+        if (existe) {
+            throw new RegraDeNegocioException("Codigo de barras '" + codigoNormalizado + "' ja cadastrado nesta empresa.");
+        }
+    }
+
+    private void validarEstoqueMaximo(java.math.BigDecimal estoqueMinimo, java.math.BigDecimal estoqueMaximo) {
+        if (estoqueMaximo != null && estoqueMaximo.compareTo(estoqueMinimo) < 0) {
+            throw new RegraDeNegocioException("O estoque maximo nao pode ser menor que o estoque minimo.");
+        }
+    }
+
+    private String normalizarTexto(String valor) {
+        return valor == null ? null : valor.trim();
+    }
+
+    private String normalizarOpcional(String valor) {
+        if (valor == null) {
+            return null;
+        }
+
+        String normalizado = valor.trim();
+        return normalizado.isBlank() ? null : normalizado;
     }
 }
