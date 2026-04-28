@@ -17,7 +17,6 @@ public class PlanoResponse {
     private String nome;
     private BigDecimal preco;
     private Integer duracaoDias;
-    private Integer maxDispositivos;
     private Boolean ativo;
 
     public static PlanoResponse from(Plano plano) {
@@ -26,7 +25,6 @@ public class PlanoResponse {
                 .nome(plano.getNome())
                 .preco(plano.getPreco())
                 .duracaoDias(plano.getDuracaoDias())
-                .maxDispositivos(plano.getMaxDispositivos())
                 .ativo(plano.getAtivo())
                 .build();
     }

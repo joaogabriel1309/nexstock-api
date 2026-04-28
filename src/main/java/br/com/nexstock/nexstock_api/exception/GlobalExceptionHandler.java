@@ -57,16 +57,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ));
     }
 
-    @ExceptionHandler(LimiteDispositivosException.class)
-    public ResponseEntity<ErroResponse> handleLimiteDispositivos(
-            LimiteDispositivosException ex, WebRequest request) {
-
-        log.warn("Limite de dispositivos atingido: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erro(
-            HttpStatus.UNPROCESSABLE_ENTITY, "Limite atingido", ex.getMessage(), request, null
-        ));
-    }
-
     @ExceptionHandler(SyncException.class)
     public ResponseEntity<ErroResponse> handleSync(
             SyncException ex, WebRequest request) {

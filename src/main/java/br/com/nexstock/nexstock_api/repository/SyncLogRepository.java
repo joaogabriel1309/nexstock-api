@@ -13,5 +13,5 @@ public interface SyncLogRepository extends JpaRepository<SyncLog, UUID> {
 
     Page<SyncLog> findAllByEmpresaIdOrderByDataSyncDesc(UUID empresaId, Pageable pageable);
 
-    Page<SyncLog> findAllByDispositivoIdOrderByDataSyncDesc(UUID dispositivoId, Pageable pageable);
+    Page<SyncLog> findAllByUsuarioIdOrderByDataSyncDesc(UUID usuarioId, Pageable pageable);
 }

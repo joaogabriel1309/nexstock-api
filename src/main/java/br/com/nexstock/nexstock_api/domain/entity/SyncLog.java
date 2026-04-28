@@ -12,7 +12,7 @@ import java.util.UUID;
         name = "sync_log",
         indexes = {
                 @Index(name = "idx_sync_log_empresa_id",    columnList = "empresa_id"),
-                @Index(name = "idx_sync_log_dispositivo_id", columnList = "dispositivo_id"),
+                @Index(name = "idx_sync_log_usuario_id",    columnList = "usuario_id"),
                 @Index(name = "idx_sync_log_data_sync",      columnList = "empresa_id, data_sync")
         }
 )
@@ -32,9 +32,9 @@ public class SyncLog {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "dispositivo_id", nullable = false)
-    private Dispositivo dispositivo;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
 
     @Column(name = "data_sync", nullable = false)
     private LocalDateTime dataSync;

@@ -52,7 +52,6 @@ public abstract class IntegrationTestBase {
                     sync_log,
                     movimentacao_estoque,
                     produto,
-                    dispositivo,
                     usuario,
                     empresa,
                     contrato,
