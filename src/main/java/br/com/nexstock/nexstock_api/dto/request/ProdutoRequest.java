@@ -24,8 +24,6 @@ public class ProdutoRequest {
     @NotNull(message = "O ID da empresa e obrigatorio")
     private UUID empresaId;
 
-    private UUID dispositivoId;
-
     @NotBlank(message = "O nome do produto e obrigatorio")
     @Size(max = 255, message = "O nome deve ter no maximo 255 caracteres")
     private String nome;

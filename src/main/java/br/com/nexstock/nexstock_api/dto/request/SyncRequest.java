@@ -2,7 +2,11 @@ package br.com.nexstock.nexstock_api.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,11 +20,8 @@ import java.util.UUID;
 @Builder
 public class SyncRequest {
 
-    @NotNull(message = "O ID da empresa é obrigatório")
+    @NotNull(message = "O ID da empresa e obrigatorio")
     private UUID empresaId;
-
-    @NotNull(message = "O ID do dispositivo é obrigatório")
-    private UUID dispositivoId;
 
     private LocalDateTime ultimoSyncCliente;
 

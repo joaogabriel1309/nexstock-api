@@ -110,10 +110,6 @@ public class Produto {
     private Long versao = 1L;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dispositivo_ultima_alteracao")
-    private Dispositivo dispositivoUltimaAlteracao;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_ultima_alteracao")
     private Usuario usuarioUltimaAlteracao;
 
@@ -138,9 +134,8 @@ public class Produto {
         this.atualizadoEm = LocalDateTime.now();
     }
 
-    public void registrarAtualizacao(Dispositivo dispositivo, Usuario usuario) {
+    public void registrarAtualizacao(Usuario usuario) {
         this.atualizadoEm = LocalDateTime.now();
-        this.dispositivoUltimaAlteracao = dispositivo;
         this.usuarioUltimaAlteracao = usuario;
     }
 
@@ -159,7 +154,6 @@ public class Produto {
             Boolean ativo,
             Boolean permiteVendaSemEstoque,
             LocalDateTime atualizadoEm,
-            Dispositivo dispositivo,
             Usuario usuario) {
 
         this.nome = nome;
@@ -176,7 +170,6 @@ public class Produto {
         this.ativo = ativo;
         this.permiteVendaSemEstoque = permiteVendaSemEstoque;
         this.atualizadoEm = atualizadoEm;
-        this.dispositivoUltimaAlteracao = dispositivo;
         this.usuarioUltimaAlteracao = usuario;
     }
 }

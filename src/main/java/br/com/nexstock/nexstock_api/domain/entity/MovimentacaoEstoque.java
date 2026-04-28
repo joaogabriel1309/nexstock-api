@@ -17,7 +17,6 @@ import java.util.UUID;
                 @Index(name = "idx_mov_empresa_id",     columnList = "empresa_id"),
                 @Index(name = "idx_mov_produto_id",     columnList = "produto_id"),
                 @Index(name = "idx_mov_criado_em",      columnList = "empresa_id, criado_em"),
-                @Index(name = "idx_mov_dispositivo_id", columnList = "dispositivo_id"),
                 @Index(name = "idx_mov_atualizado",    columnList = "atualizado_em")
         }
 )
@@ -31,7 +30,6 @@ import java.util.UUID;
 public class MovimentacaoEstoque {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
@@ -50,10 +48,6 @@ public class MovimentacaoEstoque {
     @Column(name = "quantidade", nullable = false, precision = 15, scale = 4)
     private BigDecimal quantidade;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dispositivo_id")
-    private Dispositivo dispositivo;
-
     @Column(name = "criado_em", nullable = false, updatable = false)
     private LocalDateTime criadoEm;
 
@@ -66,6 +60,9 @@ public class MovimentacaoEstoque {
     @PrePersist
     public void prePersist() {
         LocalDateTime agora = LocalDateTime.now();
+        if (this.id == null) {
+            this.id = UUID.randomUUID();
+        }
         this.criadoEm = agora;
         this.atualizadoEm = agora;
     }

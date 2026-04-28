@@ -26,7 +26,6 @@ public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
     private final EmpresaRepository empresaRepository;
-    private final DispositivoService dispositivoService;
     private final StorageService storageService;
 
     @Transactional

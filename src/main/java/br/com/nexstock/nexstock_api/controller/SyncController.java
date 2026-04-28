@@ -7,7 +7,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/sync")
@@ -19,9 +22,8 @@ public class SyncController {
 
     @PostMapping
     public ResponseEntity<SyncResponse> sincronizar(@RequestBody @Valid SyncRequest request) {
-        log.info("Requisição de Sync recebida — Empresa: {} | Dispositivo: {} | Itens: {}",
+        log.info("Requisicao de sync recebida - Empresa: {} | Itens: {}",
                 request.getEmpresaId(),
-                request.getDispositivoId(),
                 request.getProdutos().size() + request.getMovimentacoes().size());
 
         SyncResponse response = syncService.processar(request);

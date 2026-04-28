@@ -1,52 +1,68 @@
 package br.com.nexstock.nexstock_api.service;
 
-import br.com.nexstock.nexstock_api.domain.entity.*;
+import br.com.nexstock.nexstock_api.domain.entity.Empresa;
+import br.com.nexstock.nexstock_api.domain.entity.MovimentacaoEstoque;
+import br.com.nexstock.nexstock_api.domain.entity.Produto;
+import br.com.nexstock.nexstock_api.domain.entity.SyncLog;
+import br.com.nexstock.nexstock_api.domain.entity.Usuario;
 import br.com.nexstock.nexstock_api.domain.enums.StatusSync;
-import br.com.nexstock.nexstock_api.dto.request.*;
-import br.com.nexstock.nexstock_api.dto.response.*;
+import br.com.nexstock.nexstock_api.dto.request.MovimentacaoSyncRequest;
+import br.com.nexstock.nexstock_api.dto.request.ProdutoSyncRequest;
+import br.com.nexstock.nexstock_api.dto.request.SyncRequest;
+import br.com.nexstock.nexstock_api.dto.response.ConflictInfoResponse;
+import br.com.nexstock.nexstock_api.dto.response.ProdutoResponse;
+import br.com.nexstock.nexstock_api.dto.response.SyncResponse;
 import br.com.nexstock.nexstock_api.exception.SyncException;
-import br.com.nexstock.nexstock_api.repository.*;
+import br.com.nexstock.nexstock_api.repository.EmpresaRepository;
+import br.com.nexstock.nexstock_api.repository.MovimentacaoEstoqueRepository;
+import br.com.nexstock.nexstock_api.repository.ProdutoRepository;
+import br.com.nexstock.nexstock_api.repository.SyncLogRepository;
+import br.com.nexstock.nexstock_api.repository.UsuarioRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SyncService {
 
-    private final EmpresaRepository              empresaRepository;
-    private final DispositivoService             dispositivoService;
-    private final ProdutoService                 produtoService;
-    private final ProdutoRepository              produtoRepository;
-    private final MovimentacaoEstoqueRepository  movimentacaoRepository;
-    private final DispositivoRepository          dispositivoRepository;
-    private final SyncLogRepository              syncLogRepository;
+    private final EmpresaRepository empresaRepository;
+    private final ProdutoService produtoService;
+    private final ProdutoRepository produtoRepository;
+    private final MovimentacaoEstoqueRepository movimentacaoRepository;
+    private final SyncLogRepository syncLogRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final EntityManager entityManager;
 
     @Transactional
     public SyncResponse processar(SyncRequest request) {
         LocalDateTime inicioSync = LocalDateTime.now();
 
-        var empresa = empresaRepository.findById(request.getEmpresaId())
-                .orElseThrow(() -> new SyncException("Empresa não encontrada ou inativa."));
+        Empresa empresa = empresaRepository.findById(request.getEmpresaId())
+                .orElseThrow(() -> new SyncException("Empresa nao encontrada ou inativa."));
+        Usuario usuario = buscarUsuarioAutenticado();
 
-        var dispositivo = dispositivoService.buscarEntidade(empresa.getId(), request.getDispositivoId());
-
-        log.info("Iniciando Sync - Empresa: {} | Dispositivo: {} | Itens recebidos: {}",
-                empresa.getNome(), dispositivo.getNome(), request.getProdutos().size());
+        log.info("Iniciando Sync - Empresa: {} | Usuario: {} | Itens recebidos: {}",
+                empresa.getNome(), usuario.getEmail(), request.getProdutos().size());
 
         List<ConflictInfoResponse> conflitos = new ArrayList<>();
 
         int produtosProcessados = processarProdutos(
-                request.getProdutos(), empresa, dispositivo, conflitos
+                request.getProdutos(), empresa, usuario, conflitos
         );
 
         int movimentacoesRegistradas = processarMovimentacoes(
-                request.getMovimentacoes(), empresa, dispositivo
+                request.getMovimentacoes(), empresa, usuario
         );
 
         LocalDateTime baseSync = request.getUltimoSyncCliente() != null
@@ -59,11 +75,9 @@ public class SyncService {
                 .map(ProdutoResponse::from)
                 .toList();
 
-        dispositivo.setUltimoSync(inicioSync);
-        dispositivoRepository.save(dispositivo);
-
         SyncLog logSalvo = syncLogRepository.save(SyncLog.builder()
-                .dispositivo(dispositivo)
+                .empresa(empresa)
+                .usuario(usuario)
                 .dataSync(inicioSync)
                 .registrosEnviados(request.getProdutos().size() + request.getMovimentacoes().size())
                 .registrosRecebidos(produtosServidor.size())
@@ -84,13 +98,13 @@ public class SyncService {
     private int processarProdutos(
             List<ProdutoSyncRequest> lista,
             Empresa empresa,
-            Dispositivo dispositivo,
+            Usuario usuario,
             List<ConflictInfoResponse> conflitos) {
 
         int count = 0;
         for (ProdutoSyncRequest dto : lista) {
             try {
-                processarUmProduto(dto, empresa, dispositivo, conflitos);
+                processarUmProduto(dto, empresa, usuario, conflitos);
                 count++;
             } catch (Exception ex) {
                 log.error("Erro ao sincronizar produto {}: {}", dto.getId(), ex.getMessage());
@@ -102,7 +116,7 @@ public class SyncService {
     private void processarUmProduto(
             ProdutoSyncRequest dto,
             Empresa empresa,
-            Dispositivo dispositivo,
+            Usuario usuario,
             List<ConflictInfoResponse> conflitos) {
 
         Produto existente = produtoService.buscarEntidadeInclusoDeletados(empresa.getId(), dto.getId());
@@ -126,12 +140,11 @@ public class SyncService {
                     .permiteVendaSemEstoque(dto.getPermiteVendaSemEstoque())
                     .atualizadoEm(dto.getAtualizadoEm())
                     .versao(1L)
-                    .dispositivoUltimaAlteracao(dispositivo)
+                    .usuarioUltimaAlteracao(usuario)
                     .deletadoEm(dto.getDeletadoEm())
                     .build();
 
             produtoRepository.save(novo);
-
             return;
         }
 
@@ -154,12 +167,10 @@ public class SyncService {
             existente.setPermiteVendaSemEstoque(dto.getPermiteVendaSemEstoque());
             existente.setVersao(existente.getVersao() + 1);
             existente.setAtualizadoEm(clienteTs);
-            existente.setDispositivoUltimaAlteracao(dispositivo);
-
+            existente.setUsuarioUltimaAlteracao(usuario);
             existente.setDeletadoEm(dto.getDeletadoEm());
 
             produtoRepository.save(existente);
-
         } else if (clienteTs.isBefore(servidorTs)) {
             conflitos.add(ConflictInfoResponse.builder()
                     .produtoId(dto.getId())
@@ -174,14 +185,14 @@ public class SyncService {
     private int processarMovimentacoes(
             List<MovimentacaoSyncRequest> lista,
             Empresa empresa,
-            Dispositivo dispositivo) {
+            Usuario usuario) {
 
         if (lista.isEmpty()) return 0;
 
         List<UUID> idsEnviados = lista.stream().map(MovimentacaoSyncRequest::getId).toList();
         Set<UUID> jaExistentes = movimentacaoRepository.findIdsExistentes(idsEnviados, empresa.getId());
 
-        List<MovimentacaoEstoque> novas = new ArrayList<>();
+        int count = 0;
 
         for (MovimentacaoSyncRequest dto : lista) {
             if (jaExistentes.contains(dto.getId())) continue;
@@ -189,20 +200,26 @@ public class SyncService {
             Produto produto = produtoService.buscarEntidadeAtiva(empresa.getId(), dto.getProdutoId());
             if (produto == null) continue;
 
-            novas.add(MovimentacaoEstoque.builder()
+            produto.setUsuarioUltimaAlteracao(usuario);
+
+            MovimentacaoEstoque movimentacao = MovimentacaoEstoque.builder()
                     .id(dto.getId())
                     .produto(produto)
                     .tipo(dto.getTipo())
                     .quantidade(dto.getQuantidade())
-                    .dispositivo(dispositivo)
                     .empresa(empresa)
-                    .build());
+                    .build();
+
+            entityManager.persist(movimentacao);
+            count++;
         }
 
-        if (!novas.isEmpty()) {
-            movimentacaoRepository.saveAll(novas);
-        }
+        return count;
+    }
 
-        return novas.size();
+    private Usuario buscarUsuarioAutenticado() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return usuarioRepository.findByEmailAndDeletadoEmIsNull(email)
+                .orElseThrow(() -> new org.springframework.security.authentication.BadCredentialsException("Usuario nao autenticado"));
     }
 }

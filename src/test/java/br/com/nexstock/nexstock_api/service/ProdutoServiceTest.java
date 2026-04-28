@@ -37,7 +37,6 @@ class ProdutoServiceTest {
 
     @Mock ProdutoRepository produtoRepository;
     @Mock EmpresaRepository empresaRepository;
-    @Mock DispositivoService dispositivoService;
     @Mock StorageService storageService;
 
     @InjectMocks ProdutoService produtoService;
