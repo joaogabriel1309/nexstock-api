@@ -41,7 +41,6 @@ public class ProdutoResponse {
     private String imagemKey;
     private LocalDateTime atualizadoEm;
     private Long versao;
-    private UUID dispositivoUltimaAlteracaoId;
     private LocalDateTime deletadoEm;
 
     public static ProdutoResponse from(Produto produto) {
@@ -74,11 +73,6 @@ public class ProdutoResponse {
                 .atualizadoEm(produto.getAtualizadoEm())
                 .versao(produto.getVersao())
                 .deletadoEm(produto.getDeletadoEm())
-                .dispositivoUltimaAlteracaoId(
-                        produto.getDispositivoUltimaAlteracao() != null
-                                ? produto.getDispositivoUltimaAlteracao().getId()
-                                : null
-                )
                 .build();
     }
 
